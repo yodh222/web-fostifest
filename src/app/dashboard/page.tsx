@@ -58,7 +58,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Kelengkapan Tim */}
           <div className="pixel-card-stone p-6">
-            <h3 className="font-pixel text-lg text-green-400 mb-6">PROFIL TIM</h3>
+            <h3 className="font-pixel text-lg text-green-400 mb-6">PROFIL TIM & REGISTRASI</h3>
             <form className="space-y-4">
               <div>
                 <label className="font-pixel text-[10px] text-gray-400">NAMA TIM</label>
@@ -83,8 +83,19 @@ export default function DashboardPage() {
                 />
               </div>
 
-              <button type="button" className="pixel-btn-green font-pixel w-full py-3 mt-4 text-xs text-shadow-pixel-sm">
-                SIMPAN PROFIL
+              <div className="pt-4 border-t-2 border-dashed border-[#4a4a4a]">
+                <label className="font-pixel text-[10px] text-yellow-400">KATEGORI PERLOMBAAN / WORKSHOP</label>
+                <select className="mt-2 w-full border-4 border-[#111] bg-[#1a1a1a] p-3 font-vt323 text-xl text-white outline-none focus:border-yellow-500 cursor-pointer">
+                  <option value="" disabled selected>-- Pilih Kategori --</option>
+                  <option value="software_dev">Software Development (Rp 55.000)</option>
+                  <option value="ui_ux">UI/UX Design (Rp 55.000)</option>
+                  <option value="workshop">Workshop Eksklusif (Gratis)</option>
+                </select>
+                <p className="mt-2 font-vt323 text-sm text-gray-400">* Pilih salah satu kompetisi yang ingin Anda ikuti.</p>
+              </div>
+
+              <button type="button" className="pixel-btn-green font-pixel w-full py-3 mt-6 text-xs text-shadow-pixel-sm">
+                SIMPAN PROFIL & PILIHAN
               </button>
             </form>
           </div>
