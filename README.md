@@ -1,25 +1,67 @@
-## Website FOSTIFEST 26
+## Website# FOSTIFEST 26
 
-This is a Next.JS website that serves as the main gateway to the many FOSTIFEST
-IT competitions held by UKM FOSTI UMS.
+![FOSTIFEST 26 Logo/Header Placeholder]
 
-```bash
-pnpm install
+Platform pendaftaran dan dashboard resmi FOSTIFEST 26. Dibuat menggunakan T3 Stack modern dengan nuansa pixel-art/Minecraft. 
+Platform ini menangani alur pendaftaran dari pembentukan tim, pembayaran, hingga pengunggahan persyaratan lomba dan _workshop_.
+
+## 🚀 Fitur Utama
+* **Autentikasi Aman:** Dikelola menggunakan [Better Auth](https://better-auth.com) dengan _schema_ terpisah untuk keamanan tinggi.
+* **Manajemen Tim:** Peserta dapat membentuk tim baru atau bergabung ke dalam tim menggunakan kode _invite_ unik (hanya 1 tim per orang).
+* **Unggah Persyaratan:** Terintegrasi langsung dengan **Supabase Storage** untuk unggah KMS/KTM, Twibbon, *Follow* IG, dan Bukti Pembayaran.
+* **Dashboard Panitia (Admin):** Panel tersembunyi bagi panitia untuk memverifikasi seluruh bukti pendaftaran.
+* **Pixel-art UI:** Antarmuka estetik yang bernuansa *retro gaming*.
+
+## 🛠️ Persiapan Lingkungan (Setup)
+
+Salin fail `.env.example` menjadi `.env` lalu isi *environment variables* berikut:
+
+```env
+# URL Database (PostgreSQL)
+DATABASE_URL="postgresql://postgres:password@localhost:5432/fostifest"
+
+# Better Auth
+BETTER_AUTH_SECRET="secret-key-yang-susah-ditebak"
+BETTER_AUTH_URL="http://localhost:3000"
+
+# Supabase Storage
+NEXT_PUBLIC_SUPABASE_URL="https://[YOUR_SUPABASE_ID].supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="[YOUR_ANON_KEY]"
 ```
 
-## Akun Dummy (Initial Migration / Testing)
+> **Peringatan Supabase:** Pastikan Anda memiliki *bucket* bernama **`fostifest-files`** di Supabase dengan visibilitas _public_.
 
-Untuk membantu tahap awal peluncuran dan menghindari kebocoran oleh peserta, gunakan akun rahasia berikut.
-Gunakan endpoint khusus: Buka peramban (browser) dan akses **`http://localhost:3000/api/seed`** untuk menanamkan (*seed*) kedua akun ini ke dalam basis data Supabase secara otomatis dengan hashing password yang benar via Better Auth.
+## 📚 Migrasi Database & Seeding Dummy Account
 
-**1. Akun Panitia (Admin Dashboard)**
-- **Email:** `panitia.fosti_secret_x99@fostiums.org`
-- **Password:** `FostiAdmin_X99_#2026`
-- **Akses:** `/admin`
+1. Jalankan migrasi skema database dengan Drizzle:
+   ```bash
+   pnpm db:push
+   ```
+2. Jalankan aplikasi:
+   ```bash
+   pnpm dev
+   ```
+3. **MIGRASI AWAL / SEEDING AKUN DUMMY:**
+   Buka *endpoint* rahasia ini di browser Anda sekali saja untuk menginjeksi akun *dummy* ke database:
+   [http://localhost:3000/api/seed](http://localhost:3000/api/seed)
 
-**2. Akun Peserta (Team Dashboard)**
-- **Email:** `dummy_team_xyz88@tester.com`
-- **Password:** `TestAccount_88_!`
-- **Akses:** `/dashboard`
+   Setelah sukses, Anda dapat login (_Sign In_) menggunakan dua akun *dummy* aneh berikut untuk mengecek semua halaman secara penuh:
+
+   **👤 Akun Panitia (Admin)**
+   * Email: `panitia.fosti_secret_x99@fostiums.org`
+   * Password: `FostiAdmin_X99_#2026`
+   * _(Fungsi: Memiliki akses ke kontrol verifikasi pembayaran & verifikasi syarat kelengkapan anggota tim)_
+
+   **👥 Akun Tester/Peserta**
+   * Email: `dummy_team_xyz88@tester.com`
+   * Password: `TestAccount_88_!`
+   * _(Fungsi: Bisa mencoba simulasi pendaftaran tim, join menggunakan kode, bayar lomba, & ikut workshop)_
+
+## 💻 Panduan Pengembangan Lanjutan
+
+Bila Anda ingin memperbarui skema, silakan sunting `/src/server/db/schema.ts` dan jalankan ulang `pnpm db:push`. Semua integrasi *server logic* Fostifest berada di `/src/server/actions.ts`.
+
+---
+_© 2026 FOSTIFEST by FOSTI UMS_
 
 ## What's next? How do I make an app with this?

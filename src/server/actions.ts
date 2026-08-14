@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "~/server/db";
-import { team, user, payment } from "~/server/db/schema";
+import { teams, user, payments } from "~/server/db/schema";
 import { auth } from "~/server/better-auth/config";
 import { headers } from "next/headers";
 import { eq, count } from "drizzle-orm";
@@ -38,7 +38,7 @@ export async function createTeamAction(name: string, category: string) {
   const teamCode = generateTeamCode();
 
   // Create team
-  await db.insert(team).values({
+  await db.insert(teams).values({
     id: teamId,
     name,
     teamCode,
@@ -51,7 +51,7 @@ export async function createTeamAction(name: string, category: string) {
   await db.update(user).set({ teamId }).where(eq(user.id, session.user.id));
   
   // Create pending payment for this team
-  await db.insert(payment).values({
+  await db.insert(payments).values({
     id: crypto.randomUUID(),
     teamId,
     amount: category === "software_dev" ? 150000 : 120000, // Example logic
@@ -72,8 +72,8 @@ export async function joinTeamAction(teamCode: string) {
   }
 
   // Find team
-  const existingTeam = await db.query.team.findFirst({
-    where: eq(team.teamCode, teamCode.trim().toUpperCase()),
+  const existingTeam = await db.query.teams.findFirst({
+    where: eq(teams.teamCode, teamCode.trim().toUpperCase()),
   });
 
   if (!existingTeam) {
@@ -82,7 +82,7 @@ export async function joinTeamAction(teamCode: string) {
 
   // Check member count (max 3)
   const members = await db.select({ count: count() }).from(user).where(eq(user.teamId, existingTeam.id));
-  if (members[0].count >= 3) {
+  if ((members[0]?.count ?? 0) >= 3) {
     throw new Error("Tim ini sudah penuh (maksimal 3 anggota).");
   }
 
@@ -91,6 +91,24 @@ export async function joinTeamAction(teamCode: string) {
   
   revalidatePath("/dashboard");
   return { success: true };
+}
+
+// ----------------------------------------------------------------------
+// PARTICIPANT LOGIC
+// ----------------------------------------------------------------------
+
+export async function getParticipantDataAction() {
+  const session = await getSession();
+  if (!session?.user || !session.user.teamId) return null;
+
+  const team = await db.query.teams.findFirst({
+    where: eq(teams.id, session.user.teamId)
+  });
+  const payment = await db.query.payments.findFirst({
+    where: eq(payments.teamId, session.user.teamId)
+  });
+
+  return { team, payment };
 }
 
 // ----------------------------------------------------------------------
@@ -112,11 +130,14 @@ export async function uploadRequirementAction(formData: FormData) {
   const ext = file.name.split('.').pop();
   const fileName = `${session.user.id}/${requirementType}-${Date.now()}.${ext}`;
   
+  const arrayBuffer = await file.arrayBuffer();
+  
   const { data, error } = await supabase.storage
     .from("fostifest-files")
-    .upload(fileName, file, {
+    .upload(fileName, arrayBuffer, {
       cacheControl: "3600",
       upsert: true,
+      contentType: file.type
     });
 
   if (error) {
@@ -153,11 +174,14 @@ export async function uploadPaymentAction(formData: FormData) {
   const ext = file.name.split('.').pop();
   const fileName = `payments/${session.user.teamId}-${Date.now()}.${ext}`;
   
+  const arrayBuffer = await file.arrayBuffer();
+
   const { data, error } = await supabase.storage
     .from("fostifest-files")
-    .upload(fileName, file, {
+    .upload(fileName, arrayBuffer, {
       cacheControl: "3600",
       upsert: true,
+      contentType: file.type
     });
 
   if (error) {
@@ -168,10 +192,10 @@ export async function uploadPaymentAction(formData: FormData) {
     .from("fostifest-files")
     .getPublicUrl(fileName);
 
-  await db.update(payment).set({ 
+  await db.update(payments).set({ 
     proofUrl: publicUrl,
     status: "pending" 
-  }).where(eq(payment.teamId, session.user.teamId));
+  }).where(eq(payments.teamId, session.user.teamId));
   
   revalidatePath("/dashboard");
   return { success: true, url: publicUrl };
@@ -188,31 +212,32 @@ export async function getAdminDataAction() {
   }
 
   // Fetch all teams
-  const allTeams = await db.query.team.findMany();
-  
-  // We'll fetch members separately to keep it simple, or use relational queries if defined
-  // Wait, Drizzle relational query might fail if relations aren't defined properly in schema.
-  // We'll fetch them manually for safety if relations fail.
-  
+  const allTeams = await db.query.teams.findMany();
   const allUsers = await db.query.user.findMany();
-  const allPayments = await db.query.payment.findMany();
+  const allPayments = await db.query.payments.findMany();
 
   // Combine them
-  return allTeams.map((t) => ({
+  const formattedTeams = allTeams.map((t) => ({
     ...t,
     members: allUsers.filter((u) => u.teamId === t.id),
     payment: allPayments.find((p) => p.teamId === t.id),
   }));
+
+  return {
+    teams: formattedTeams,
+    users: allUsers,
+    payments: allPayments
+  };
 }
 
 export async function verifyPaymentAction(teamId: string, status: "verified" | "rejected") {
   const session = await getSession();
   if (!session?.user || session.user.role !== "admin") throw new Error("Unauthorized");
 
-  await db.update(payment).set({ 
+  await db.update(payments).set({ 
     status,
     verifiedBy: session.user.id
-  }).where(eq(payment.teamId, teamId));
+  }).where(eq(payments.teamId, teamId));
 
   revalidatePath("/dashboard");
   return { success: true };
@@ -226,6 +251,22 @@ export async function verifyRequirementsAction(userId: string, status: "verified
     requirementsStatus: status 
   }).where(eq(user.id, userId));
 
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
+export async function promoteToAdminAction(email: string) {
+  const session = await getSession();
+  if (!session?.user || session.user.role !== "admin") throw new Error("Unauthorized");
+
+  const targetUser = await db.query.user.findFirst({
+    where: eq(user.email, email.trim())
+  });
+
+  if (!targetUser) throw new Error(`Pengguna dengan email ${email} tidak ditemukan.`);
+  if (targetUser.role === "admin") throw new Error("Pengguna ini sudah menjadi panitia.");
+
+  await db.update(user).set({ role: "admin" }).where(eq(user.email, email.trim()));
   revalidatePath("/dashboard");
   return { success: true };
 }

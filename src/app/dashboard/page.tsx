@@ -3,11 +3,26 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "~/server/better-auth/client";
-import Link from "next/link";
+import { PixelModal } from "~/app/_components/PixelModal";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
+  
+  // Modal State
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    title?: string;
+    message: string;
+    type?: "info" | "error" | "success" | "confirm";
+    onConfirm?: () => void;
+  }>({ isOpen: false, message: "" });
+
+  const showModal = (message: string, type: "info" | "error" | "success" | "confirm" = "info", onConfirm?: () => void) => {
+    setModalState({ isOpen: true, message, type, onConfirm });
+  };
+
+  const closeModal = () => setModalState(prev => ({ ...prev, isOpen: false }));
 
   // Protect route
   useEffect(() => {
@@ -24,12 +39,23 @@ export default function DashboardPage() {
     );
   }
 
-  const isAdmin = session.user.role === "admin";
+  const user = session.user as any;
+  const isAdmin = user.role === "admin";
 
   return (
-    <main className="min-h-screen bg-[#111111] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] p-4 text-white">
+    <main className="min-h-screen bg-[#111111] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] p-4 text-white relative overflow-hidden scanline">
       <div className={`absolute inset-0 mix-blend-overlay ${isAdmin ? 'bg-red-900/10' : 'bg-green-900/10'}`}></div>
+      <div className="absolute top-0 right-0 h-[500px] w-[500px] rounded-full bg-blue-500/5 blur-[150px] animate-pulse-glow"></div>
+      <div className="absolute bottom-0 left-0 h-[500px] w-[500px] rounded-full bg-green-500/5 blur-[150px] animate-pulse-glow"></div>
       
+      <PixelModal 
+        isOpen={modalState.isOpen}
+        message={modalState.message}
+        type={modalState.type}
+        onClose={closeModal}
+        onConfirm={modalState.onConfirm}
+      />
+
       {/* Navbar Dashboard */}
       <nav className="relative z-10 flex items-center justify-between border-b-4 border-[#1a1a1a] bg-[#2a2a2a] p-4">
         <div className="flex items-center space-x-4">
@@ -60,7 +86,7 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {isAdmin ? <AdminView /> : <ParticipantView user={session.user} />}
+        {isAdmin ? <AdminView showModal={showModal} /> : <ParticipantView user={session.user} showModal={showModal} />}
 
       </div>
     </main>
@@ -68,19 +94,21 @@ export default function DashboardPage() {
 }
 
 // At the top of the file, we also need to import the admin actions:
-import { getAdminDataAction, verifyPaymentAction, verifyRequirementsAction } from "~/server/actions";
+import { getAdminDataAction, verifyPaymentAction, verifyRequirementsAction, promoteToAdminAction } from "~/server/actions";
 
 // ----------------------------------------------------------------------
 // ADMIN VIEW COMPONENT
 // ----------------------------------------------------------------------
-function AdminView() {
-  const [teams, setTeams] = useState<any[]>([]);
+function AdminView({ showModal }: { showModal: (m: string, t?: any, c?: any) => void }) {
+  const [data, setData] = useState<{teams: any[], users: any[], payments: any[]}>({ teams: [], users: [], payments: [] });
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"teams" | "users" | "admins">("teams");
+  const [newAdminEmail, setNewAdminEmail] = useState("");
 
   useEffect(() => {
     getAdminDataAction()
-      .then(data => {
-        setTeams(data);
+      .then(d => {
+        setData(d);
         setLoading(false);
       })
       .catch(err => {
@@ -90,114 +118,301 @@ function AdminView() {
   }, []);
 
   const handleVerifyPayment = async (teamId: string, status: "verified" | "rejected") => {
-    if (confirm(`Apakah Anda yakin ingin mengubah status pembayaran tim ini menjadi ${status}?`)) {
+    showModal(`Apakah Anda yakin ingin mengubah status pembayaran tim ini menjadi ${status}?`, "confirm", async () => {
       try {
         await verifyPaymentAction(teamId, status);
-        const data = await getAdminDataAction();
-        setTeams(data);
+        const d = await getAdminDataAction();
+        setData(d);
+        showModal(`Status berhasil diubah menjadi ${status}!`, "success");
       } catch (err: any) {
-        alert(err.message);
+        showModal(err.message, "error");
       }
-    }
+    });
   };
 
-  const pendingTeams = teams.filter(t => t.payment?.status === "pending").length;
+  const exportToCSV = (filename: string, rows: object[]) => {
+    if (!rows || !rows.length) return;
+    const separator = ',';
+    const keys = Object.keys(rows[0]);
+    const csvContent =
+      keys.join(separator) +
+      '\n' +
+      rows.map(row => {
+        return keys.map(k => {
+          let cell = row[k as keyof typeof row] === null || row[k as keyof typeof row] === undefined ? '' : row[k as keyof typeof row];
+          cell = String(cell).replace(/"/g, '""');
+          if (cell.search(/("|,|\n)/g) >= 0) {
+            cell = `"${cell}"`;
+          }
+          return cell;
+        }).join(separator);
+      }).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename + ".csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportTeams = () => {
+    const exportData = data.teams.map(t => ({
+      "ID Tim": t.id,
+      "Nama Tim": t.name,
+      "Kode Tim": t.teamCode,
+      "Kategori": t.category === 'software_dev' ? 'Software Dev' : 'UI/UX Design',
+      "Status Pembayaran": t.payment?.status || 'Belum Bayar',
+      "Link Bukti Bayar": t.payment?.proofUrl || '',
+      "Jumlah Anggota": t.members?.length || 0,
+      "Nama Anggota": t.members?.map((m: any) => m.name).join(' | ') || ''
+    }));
+    exportToCSV("Data_Tim_Fostifest", exportData);
+  };
+
+  const handleExportUsers = () => {
+    const exportData = data.users.filter(u => u.role !== "admin").map(u => ({
+      "ID Akun": u.id,
+      "Nama": u.name,
+      "Email": u.email,
+      "Link KTM": u.ktmUrl || '',
+      "Link Twibbon": u.twibbonUrl || '',
+      "Link IG": u.igUrl || ''
+    }));
+    exportToCSV("Data_Peserta_Fostifest", exportData);
+  };
+
+  const handlePromoteAdmin = async () => {
+    if (!newAdminEmail) return;
+    showModal(`Jadikan ${newAdminEmail} sebagai panitia? Mereka akan memiliki akses ke dasbor ini.`, "confirm", async () => {
+      try {
+        await promoteToAdminAction(newAdminEmail);
+        const d = await getAdminDataAction();
+        setData(d);
+        setNewAdminEmail("");
+        showModal(`Berhasil menjadikan ${newAdminEmail} sebagai panitia!`, "success");
+      } catch (err: any) {
+        showModal(err.message, "error");
+      }
+    });
+  };
+
+  const pendingTeams = data.teams.filter(t => t.payment?.status === "pending").length;
+  const participantUsers = data.users.filter(u => u.role !== "admin");
+  const adminUsers = data.users.filter(u => u.role === "admin");
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center space-y-4">
+      {/* Admin Tabs */}
+      <div className="flex gap-4 w-full justify-start">
+        <button 
+          onClick={() => setActiveTab("teams")}
+          className={`font-pixel text-xs px-4 py-3 border-4 ${activeTab === 'teams' ? 'bg-red-900 border-white text-white' : 'bg-[#1a1a1a] border-[#333] text-gray-400 hover:text-white'}`}
+        >
+          [ TIM & PEMBAYARAN ]
+        </button>
+        <button 
+          onClick={() => setActiveTab("users")}
+          className={`font-pixel text-xs px-4 py-3 border-4 ${activeTab === 'users' ? 'bg-red-900 border-white text-white' : 'bg-[#1a1a1a] border-[#333] text-gray-400 hover:text-white'}`}
+        >
+          [ AKUN PESERTA ]
+        </button>
+        <button 
+          onClick={() => setActiveTab("admins")}
+          className={`font-pixel text-xs px-4 py-3 border-4 ${activeTab === 'admins' ? 'bg-red-900 border-white text-white' : 'bg-[#1a1a1a] border-[#333] text-gray-400 hover:text-white'}`}
+        >
+          [ AKUN PANITIA ]
+        </button>
+      </div>
+
       <div className="pixel-card-wood w-full p-4">
         <div className="pixel-card-wood-light relative p-6">
-          <div className="mt-2 flex gap-4 border-b-4 border-[#3b2514] pb-6">
-            <div className="flex-1 flex gap-4">
-              <div>
-                <label className="font-pixel text-xs text-gray-800">CARI TIM</label>
-                <input type="text" className="h-10 w-full bg-[#1a0f07] border-2 border-[#1a0f07] text-white p-2 font-vt323 text-lg outline-none" placeholder="Nama tim..." />
+          {activeTab === "teams" && (
+            <>
+              <div className="mt-2 flex gap-4 border-b-4 border-[#3b2514] pb-6">
+                <div className="flex-1 flex gap-4">
+                  <div>
+                    <label className="font-pixel text-xs text-gray-800">CARI TIM</label>
+                    <input type="text" className="h-10 w-full bg-[#1a0f07] border-2 border-[#1a0f07] text-white p-2 font-vt323 text-lg outline-none" placeholder="Nama tim..." />
+                  </div>
+                </div>
+                <div className="font-pixel text-xs text-right text-gray-900 bg-white/20 p-2 border-2 border-[#3b2514]">
+                  <p>TOTAL TIM: <span className="text-yellow-200">{data.teams.length}</span></p>
+                  <p>MENUNGGU VERIFIKASI: <span className="text-red-200">{pendingTeams}</span></p>
+                </div>
+                <div className="flex items-center">
+                  <button onClick={handleExportTeams} className="font-pixel text-[10px] bg-green-700 text-white px-4 py-2 hover:bg-green-600 border-2 border-green-400">
+                    [ EXPORT KE EXCEL ]
+                  </button>
+                </div>
               </div>
-            </div>
-            <div className="font-pixel text-xs text-right text-gray-900 bg-white/20 p-2 border-2 border-[#3b2514]">
-              <p>TOTAL TIM: <span className="text-yellow-200">{teams.length}</span></p>
-              <p>MENUNGGU VERIFIKASI: <span className="text-red-200">{pendingTeams}</span></p>
-            </div>
-          </div>
 
-          <div className="overflow-x-auto mt-6">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead>
-                <tr className="font-pixel text-gray-200 border-b-2 border-[#3b2514]">
-                  <th className="pb-4 px-2">NAMA TIM</th>
-                  <th className="pb-4 px-2">KODE TIM</th>
-                  <th className="pb-4 px-2">KATEGORI</th>
-                  <th className="pb-4 px-2">STATUS PEMBAYARAN</th>
-                  <th className="pb-4 px-2">ANGGOTA & SYARAT</th>
-                  <th className="pb-4 px-2">AKSI (BAYAR)</th>
-                </tr>
-              </thead>
-              <tbody className="font-pixel text-xs text-gray-400">
-                {loading ? (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-white">Memuat data...</td>
-                  </tr>
-                ) : teams.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center">Belum ada data tim.</td>
-                  </tr>
-                ) : (
-                  teams.map((t) => (
-                    <tr key={t.id} className="border-b-2 border-[#3b2514]/50 hover:bg-[#3b2514]/30">
-                      <td className="py-4 px-2 text-white">{t.name}</td>
-                      <td className="py-4 px-2 text-yellow-300">{t.teamCode}</td>
-                      <td className="py-4 px-2">{t.category === 'software_dev' ? 'Software Dev' : 'UI/UX Design'}</td>
-                      <td className="py-4 px-2">
-                        {t.payment?.proofUrl ? (
-                          <a href={t.payment.proofUrl} target="_blank" rel="noreferrer" className={`block w-fit px-2 py-1 rounded hover:underline ${t.payment?.status === 'verified' ? 'bg-green-900 text-green-300' : t.payment?.status === 'rejected' ? 'bg-red-900 text-red-300' : 'bg-yellow-900 text-yellow-300'}`}>
-                            {t.payment?.status?.toUpperCase() || 'UNKNOWN'} (LIHAT BUKTI)
-                          </a>
-                        ) : (
-                          <span className="px-2 py-1 rounded bg-gray-900 text-gray-500">BELUM BAYAR</span>
-                        )}
-                      </td>
-                      <td className="py-4 px-2">
-                        <ul className="space-y-1">
-                          {t.members?.map((m: any) => (
-                            <li key={m.id} className="flex gap-2 items-center">
-                              <span>- {m.name}</span>
-                              <div className="flex gap-1">
-                                {m.ktmUrl ? <a href={m.ktmUrl} target="_blank" rel="noreferrer" title="KTM" className="text-green-500 hover:underline">[K]</a> : <span title="KTM" className="text-gray-600">[K]</span>}
-                                {m.twibbonUrl ? <a href={m.twibbonUrl} target="_blank" rel="noreferrer" title="Twibbon" className="text-green-500 hover:underline">[T]</a> : <span title="Twibbon" className="text-gray-600">[T]</span>}
-                                {m.igUrl ? <a href={m.igUrl} target="_blank" rel="noreferrer" title="IG" className="text-green-500 hover:underline">[I]</a> : <span title="IG" className="text-gray-600">[I]</span>}
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      </td>
-                      <td className="py-4 px-2">
-                        {t.payment?.status !== 'verified' && (
-                          <button onClick={() => handleVerifyPayment(t.teamId, "verified")} className="bg-green-600 text-white px-3 py-1 hover:bg-green-500 mr-2">VERIFIKASI</button>
-                        )}
-                        {t.payment?.status !== 'rejected' && (
-                          <button onClick={() => handleVerifyPayment(t.teamId, "rejected")} className="bg-red-600 text-white px-3 py-1 hover:bg-red-500">TOLAK</button>
-                        )}
-                      </td>
+              <div className="overflow-x-auto mt-6">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead>
+                    <tr className="font-pixel text-gray-200 border-b-2 border-[#3b2514]">
+                      <th className="pb-4 px-2">NAMA TIM</th>
+                      <th className="pb-4 px-2">KODE TIM</th>
+                      <th className="pb-4 px-2">KATEGORI</th>
+                      <th className="pb-4 px-2">STATUS PEMBAYARAN</th>
+                      <th className="pb-4 px-2">ANGGOTA</th>
+                      <th className="pb-4 px-2">AKSI (BAYAR)</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody className="font-pixel text-xs text-gray-400">
+                    {loading ? (
+                      <tr><td colSpan={6} className="py-8 text-center text-white">Memuat data...</td></tr>
+                    ) : data.teams.length === 0 ? (
+                      <tr><td colSpan={6} className="py-8 text-center">Belum ada data tim.</td></tr>
+                    ) : (
+                      data.teams.map((t) => (
+                        <tr key={t.id} className="border-b-2 border-[#3b2514]/50 hover:bg-[#3b2514]/30">
+                          <td className="py-4 px-2 text-white">{t.name}</td>
+                          <td className="py-4 px-2 text-yellow-300">{t.teamCode}</td>
+                          <td className="py-4 px-2">{t.category === 'software_dev' ? 'Software Dev' : 'UI/UX Design'}</td>
+                          <td className="py-4 px-2">
+                            {t.payment?.proofUrl ? (
+                              <a href={t.payment.proofUrl} target="_blank" rel="noreferrer" className={`block w-fit px-2 py-1 rounded hover:underline ${t.payment?.status === 'verified' ? 'bg-green-900 text-green-300' : t.payment?.status === 'rejected' ? 'bg-red-900 text-red-300' : 'bg-yellow-900 text-yellow-300'}`}>
+                                {t.payment?.status?.toUpperCase() || 'UNKNOWN'} (LIHAT BUKTI)
+                              </a>
+                            ) : (
+                              <span className="px-2 py-1 rounded bg-gray-900 text-gray-500">BELUM BAYAR</span>
+                            )}
+                          </td>
+                          <td className="py-4 px-2">
+                            <ul className="space-y-1">
+                              {t.members?.map((m: any) => (
+                                <li key={m.id} className="text-gray-300">- {m.name}</li>
+                              ))}
+                            </ul>
+                          </td>
+                          <td className="py-4 px-2">
+                            {t.payment?.status !== 'verified' && (
+                              <button onClick={() => handleVerifyPayment(t.id, "verified")} className="bg-green-600 text-white px-3 py-1 hover:bg-green-500 mr-2">VERIFIKASI</button>
+                            )}
+                            {t.payment?.status !== 'rejected' && (
+                              <button onClick={() => handleVerifyPayment(t.id, "rejected")} className="bg-red-600 text-white px-3 py-1 hover:bg-red-500">TOLAK</button>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+
+          {activeTab === "users" && (
+            <>
+              <div className="mt-2 flex gap-4 border-b-4 border-[#3b2514] pb-6">
+                <div className="font-pixel text-xs text-left text-gray-900 bg-white/20 p-2 border-2 border-[#3b2514]">
+                  <p>TOTAL AKUN PESERTA: <span className="text-yellow-200">{participantUsers.length}</span></p>
+                </div>
+                <div className="flex items-center">
+                  <button onClick={handleExportUsers} className="font-pixel text-[10px] bg-green-700 text-white px-4 py-2 hover:bg-green-600 border-2 border-green-400">
+                    [ EXPORT KE EXCEL ]
+                  </button>
+                </div>
+              </div>
+              <div className="overflow-x-auto mt-6">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead>
+                    <tr className="font-pixel text-gray-200 border-b-2 border-[#3b2514]">
+                      <th className="pb-4 px-2">NAMA</th>
+                      <th className="pb-4 px-2">EMAIL</th>
+                      <th className="pb-4 px-2">KTM</th>
+                      <th className="pb-4 px-2">TWIBBON</th>
+                      <th className="pb-4 px-2">IG</th>
+                    </tr>
+                  </thead>
+                  <tbody className="font-pixel text-xs text-gray-400">
+                    {loading ? (
+                      <tr><td colSpan={5} className="py-8 text-center text-white">Memuat data...</td></tr>
+                    ) : participantUsers.length === 0 ? (
+                      <tr><td colSpan={5} className="py-8 text-center">Belum ada data peserta.</td></tr>
+                    ) : (
+                      participantUsers.map((u) => (
+                        <tr key={u.id} className="border-b-2 border-[#3b2514]/50 hover:bg-[#3b2514]/30">
+                          <td className="py-4 px-2 text-white">{u.name}</td>
+                          <td className="py-4 px-2 text-yellow-300">{u.email}</td>
+                          <td className="py-4 px-2">{u.ktmUrl ? <a href={u.ktmUrl} target="_blank" rel="noreferrer" className="text-green-500 hover:underline">[LIHAT]</a> : <span className="text-gray-600">-</span>}</td>
+                          <td className="py-4 px-2">{u.twibbonUrl ? <a href={u.twibbonUrl} target="_blank" rel="noreferrer" className="text-green-500 hover:underline">[LIHAT]</a> : <span className="text-gray-600">-</span>}</td>
+                          <td className="py-4 px-2">{u.igUrl ? <a href={u.igUrl} target="_blank" rel="noreferrer" className="text-green-500 hover:underline">[LIHAT]</a> : <span className="text-gray-600">-</span>}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+
+          {activeTab === "admins" && (
+            <>
+              <div className="mt-2 flex gap-4 border-b-4 border-[#3b2514] pb-6 flex-wrap">
+                <div className="font-pixel text-xs text-left text-gray-900 bg-white/20 p-2 border-2 border-[#3b2514]">
+                  <p>TOTAL PANITIA: <span className="text-yellow-200">{adminUsers.length}</span></p>
+                </div>
+                <div className="flex-1 flex gap-2 min-w-[300px]">
+                  <input 
+                    type="email" 
+                    value={newAdminEmail}
+                    onChange={(e) => setNewAdminEmail(e.target.value)}
+                    className="h-10 flex-1 bg-[#1a0f07] border-2 border-[#1a0f07] text-white p-2 font-vt323 text-lg outline-none" 
+                    placeholder="Masukkan email akun peserta..." 
+                  />
+                  <button 
+                    onClick={handlePromoteAdmin}
+                    className="font-pixel text-[10px] bg-red-900 text-white px-4 hover:bg-red-800"
+                  >
+                    JADIKAN PANITIA
+                  </button>
+                </div>
+              </div>
+              <div className="overflow-x-auto mt-6">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead>
+                    <tr className="font-pixel text-gray-200 border-b-2 border-[#3b2514]">
+                      <th className="pb-4 px-2">NAMA PANITIA</th>
+                      <th className="pb-4 px-2">EMAIL</th>
+                      <th className="pb-4 px-2">HAK AKSES</th>
+                    </tr>
+                  </thead>
+                  <tbody className="font-pixel text-xs text-gray-400">
+                    {loading ? (
+                      <tr><td colSpan={3} className="py-8 text-center text-white">Memuat data...</td></tr>
+                    ) : (
+                      adminUsers.map((u) => (
+                        <tr key={u.id} className="border-b-2 border-[#3b2514]/50 hover:bg-[#3b2514]/30">
+                          <td className="py-4 px-2 text-white">{u.name}</td>
+                          <td className="py-4 px-2 text-yellow-300">{u.email}</td>
+                          <td className="py-4 px-2 text-red-400">ADMIN / PANITIA</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-import { createTeamAction, joinTeamAction, uploadPaymentAction } from "~/server/actions";
+import { createTeamAction, joinTeamAction, uploadPaymentAction, getParticipantDataAction } from "~/server/actions";
 
 // At the top of ParticipantView, add:
 import { uploadRequirementAction } from "~/server/actions";
 import { useRef } from "react";
 
 // (Inside ParticipantView, below states)
-function ParticipantView({ user }: { user: any }) {
+function ParticipantView({ user, showModal }: { user: any; showModal: (m: string, t?: any, c?: any) => void }) {
   const [activeTab, setActiveTab] = useState<"team" | "workshop">("team");
   
   // States for creating a team
@@ -211,24 +426,29 @@ function ParticipantView({ user }: { user: any }) {
 
   // States for uploads
   const [uploadingTarget, setUploadingTarget] = useState<string | null>(null);
+  
+  // Fetch participant specific team data (like payments)
+  const [participantData, setParticipantData] = useState<{team: any, payment: any} | null>(null);
+  useEffect(() => {
+    getParticipantDataAction().then(res => setParticipantData(res)).catch(() => {});
+  }, []);
 
   // Determine if user has a team
   const hasTeam = !!user.teamId;
 
   const handleCreateTeam = async () => {
     if (!teamName || !competitionCategory) {
-      alert("Mohon lengkapi nama tim dan kategori!");
+      showModal("Mohon lengkapi nama tim dan kategori!", "error");
       return;
     }
     setIsCreating(true);
     try {
       const res = await createTeamAction(teamName, competitionCategory);
       if (res.success) {
-        alert("Berhasil membuat tim! Kode tim Anda: " + res.teamCode);
-        window.location.reload(); 
+        showModal("Berhasil membuat tim! Kode tim Anda: " + res.teamCode, "success", () => window.location.reload());
       }
     } catch (err: any) {
-      alert(err.message);
+      showModal(err.message, "error");
     } finally {
       setIsCreating(false);
     }
@@ -236,18 +456,17 @@ function ParticipantView({ user }: { user: any }) {
 
   const handleJoinTeam = async () => {
     if (!joinCode) {
-      alert("Masukkan kode tim!");
+      showModal("Masukkan kode tim!", "error");
       return;
     }
     setIsJoining(true);
     try {
       const res = await joinTeamAction(joinCode);
       if (res.success) {
-        alert("Berhasil bergabung ke tim!");
-        window.location.reload();
+        showModal("Berhasil bergabung ke tim!", "success", () => window.location.reload());
       }
     } catch (err: any) {
-      alert(err.message);
+      showModal(err.message, "error");
     } finally {
       setIsJoining(false);
     }
@@ -257,7 +476,7 @@ function ParticipantView({ user }: { user: any }) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      alert("Maksimal ukuran berkas adalah 5MB!");
+      showModal("Maksimal ukuran berkas adalah 5MB!", "error");
       return;
     }
     setUploadingTarget("payment");
@@ -266,11 +485,10 @@ function ParticipantView({ user }: { user: any }) {
     try {
       const res = await uploadPaymentAction(formData);
       if (res.success) {
-        alert("Berhasil mengunggah bukti pembayaran tim!");
-        window.location.reload();
+        showModal("Berhasil mengunggah bukti pembayaran tim!", "success", () => window.location.reload());
       }
     } catch (err: any) {
-      alert(err.message);
+      showModal(err.message, "error");
     } finally {
       setUploadingTarget(null);
     }
@@ -281,7 +499,7 @@ function ParticipantView({ user }: { user: any }) {
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      alert("Maksimal ukuran berkas adalah 2MB!");
+      showModal("Maksimal ukuran berkas adalah 2MB!", "error");
       return;
     }
 
@@ -293,11 +511,10 @@ function ParticipantView({ user }: { user: any }) {
     try {
       const res = await uploadRequirementAction(formData);
       if (res.success) {
-        alert("Berhasil mengunggah berkas!");
-        window.location.reload();
+        showModal("Berhasil mengunggah berkas!", "success", () => window.location.reload());
       }
     } catch (err: any) {
-      alert(err.message);
+      showModal(err.message, "error");
     } finally {
       setUploadingTarget(null);
     }
@@ -308,7 +525,7 @@ function ParticipantView({ user }: { user: any }) {
     const isUploading = uploadingTarget === type;
     return (
       <div>
-        <label className="font-pixel text-[10px] text-gray-400 flex justify-between">
+        <label className="font-pixel text-[10px] text-gray-400 flex justify-between mb-2">
           <span>{title}</span>
           {currentUrl ? (
             <span className="text-green-400">✔ TERUNGGAH</span>
@@ -316,18 +533,26 @@ function ParticipantView({ user }: { user: any }) {
             <span className="text-red-400">✖ KOSONG</span>
           )}
         </label>
-        <div className="relative mt-2 flex h-20 flex-col items-center justify-center border-2 border-dashed border-[#4a4a4a] bg-[#1a1a1a] cursor-pointer hover:border-orange-500 transition-colors">
-          <span className="font-vt323 text-lg text-gray-400">
-            {isUploading ? "MENGUNGGAH..." : currentUrl ? "Ubah Berkas" : "Pilih Berkas (Max 2MB)"}
-          </span>
-          <input 
-            type="file" 
-            accept="image/png, image/jpeg"
-            onChange={(e) => handleUpload(e, type)}
-            disabled={isUploading}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" 
-          />
-        </div>
+        {currentUrl ? (
+          <div className="flex gap-2">
+            <a href={currentUrl} target="_blank" rel="noreferrer" className="flex-1 flex items-center justify-center font-pixel text-xs bg-green-900/30 border-2 border-green-500 text-green-300 py-2 hover:bg-green-800 transition-colors">
+              [ LIHAT ]
+            </a>
+            <div className="relative border-2 border-dashed border-[#4a4a4a] bg-[#1a1a1a] hover:border-orange-500 w-24">
+              <span className="absolute inset-0 flex items-center justify-center font-pixel text-[10px] text-gray-400">
+                {isUploading ? "..." : "UBAH"}
+              </span>
+              <input type="file" accept="image/png, image/jpeg" onChange={(e) => handleUpload(e, type)} disabled={isUploading} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" />
+            </div>
+          </div>
+        ) : (
+          <div className="relative flex h-20 flex-col items-center justify-center border-2 border-dashed border-[#4a4a4a] bg-[#1a1a1a] cursor-pointer hover:border-orange-500 transition-colors">
+            <span className="font-vt323 text-lg text-gray-400">
+              {isUploading ? "MENGUNGGAH..." : "Pilih Berkas (Max 2MB)"}
+            </span>
+            <input type="file" accept="image/png, image/jpeg" onChange={(e) => handleUpload(e, type)} disabled={isUploading} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" />
+          </div>
+        )}
       </div>
     );
   };
@@ -430,22 +655,48 @@ function ParticipantView({ user }: { user: any }) {
                 </div>
                 
                 <div className="border-t-2 border-dashed border-[#543b22] pt-6">
-                  <label className="font-pixel text-xs text-yellow-300 flex justify-between">
+                  <label className="font-pixel text-xs text-yellow-300 flex justify-between mb-2">
                     <span>BUKTI PEMBAYARAN TIM</span>
+                    {participantData?.payment?.proofUrl ? (
+                      <span className="text-green-400">✔ TERUNGGAH ({participantData.payment.status.toUpperCase()})</span>
+                    ) : (
+                      <span className="text-red-400">✖ KOSONG</span>
+                    )}
                   </label>
                   <p className="font-vt323 text-lg text-gray-400 mb-2">Unggah bukti transfer (Max 5MB). Pastikan jelas.</p>
-                  <div className="relative mt-2 flex h-20 flex-col items-center justify-center border-2 border-dashed border-[#8a633a] bg-[#3b2514]/30 cursor-pointer hover:border-yellow-500 transition-colors">
-                    <span className="font-vt323 text-xl text-yellow-100">
-                      {uploadingTarget === "payment" ? "MENGUNGGAH..." : "Klik untuk Unggah Bukti Pembayaran"}
-                    </span>
-                    <input 
-                      type="file" 
-                      accept="image/png, image/jpeg, application/pdf"
-                      onChange={handlePaymentUpload}
-                      disabled={uploadingTarget === "payment"}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" 
-                    />
-                  </div>
+                  
+                  {participantData?.payment?.proofUrl ? (
+                    <div className="flex gap-2">
+                      <a href={participantData.payment.proofUrl} target="_blank" rel="noreferrer" className="flex-1 flex items-center justify-center font-pixel text-xs bg-yellow-900/50 border-2 border-yellow-500 text-yellow-300 py-3 hover:bg-yellow-800 transition-colors">
+                        [ LIHAT BUKTI TERUNGGAH ]
+                      </a>
+                      <div className="relative border-2 border-dashed border-[#8a633a] bg-[#3b2514]/30 hover:border-yellow-500 w-32">
+                        <span className="absolute inset-0 flex items-center justify-center font-pixel text-[10px] text-yellow-100">
+                          {uploadingTarget === "payment" ? "..." : "UBAH BUKTI"}
+                        </span>
+                        <input 
+                          type="file" 
+                          accept="image/png, image/jpeg, application/pdf"
+                          onChange={handlePaymentUpload}
+                          disabled={uploadingTarget === "payment"}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" 
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="relative mt-2 flex h-20 flex-col items-center justify-center border-2 border-dashed border-[#8a633a] bg-[#3b2514]/30 cursor-pointer hover:border-yellow-500 transition-colors">
+                      <span className="font-vt323 text-xl text-yellow-100">
+                        {uploadingTarget === "payment" ? "MENGUNGGAH..." : "Klik untuk Unggah Bukti Pembayaran"}
+                      </span>
+                      <input 
+                        type="file" 
+                        accept="image/png, image/jpeg, application/pdf"
+                        onChange={handlePaymentUpload}
+                        disabled={uploadingTarget === "payment"}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" 
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             )}

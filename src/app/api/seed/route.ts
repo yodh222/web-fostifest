@@ -8,6 +8,9 @@ export async function GET() {
         email: "panitia.fosti_secret_x99@fostiums.org",
         password: "FostiAdmin_X99_#2026",
         name: "Supreme Admin",
+        role: "admin",
+        isWorkshopParticipant: false,
+        requirementsStatus: "verified"
       },
     });
 
@@ -16,6 +19,9 @@ export async function GET() {
         email: "dummy_team_xyz88@tester.com",
         password: "TestAccount_88_!",
         name: "Tim Alpha Tester X",
+        role: "participant",
+        isWorkshopParticipant: false,
+        requirementsStatus: "pending"
       },
     });
 

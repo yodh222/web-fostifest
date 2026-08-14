@@ -3,7 +3,7 @@ import "~/styles/globals.css";
 import { type Metadata } from "next";
 import { Press_Start_2P, VT323 } from "next/font/google";
 
-import { TRPCReactProvider } from "~/trpc/react";
+
 
 export const metadata: Metadata = {
   title: "FOSTIFEST 26",
@@ -29,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="id" className={`${pressStart2P.variable} ${vt323.variable} scroll-smooth`}>
       <body className="font-vt323 bg-[#5c4033] text-white selection:bg-[#4a8a2a] selection:text-white antialiased">
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        {children}
       </body>
     </html>
   );
