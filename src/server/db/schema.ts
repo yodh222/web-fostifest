@@ -10,15 +10,14 @@ import {
 
 export const createTable = pgTableCreator((name) => `pg-drizzle_${name}`);
 
-export const posts = createTable(
-  "post",
+export const teams = createTable(
+  "team",
   (d) => ({
-    id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
-    name: d.varchar({ length: 256 }),
-    createdById: d
-      .varchar({ length: 255 })
-      .notNull()
-      .references(() => user.id),
+    id: d.varchar({ length: 128 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+    name: d.varchar({ length: 256 }).notNull(),
+    leaderId: d.text("leader_id").notNull().references(() => user.id),
+    institution: d.varchar({ length: 256 }).notNull(),
+    status: d.varchar({ length: 32 }).default("pending").notNull(),
     createdAt: d
       .timestamp({ withTimezone: true })
       .$defaultFn(() => new Date())
@@ -26,8 +25,28 @@ export const posts = createTable(
     updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
   }),
   (t) => [
-    index("created_by_idx").on(t.createdById),
-    index("name_idx").on(t.name),
+    index("leader_id_idx").on(t.leaderId),
+    index("team_name_idx").on(t.name),
+  ],
+);
+
+export const payments = createTable(
+  "payment",
+  (d) => ({
+    id: d.varchar({ length: 128 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+    teamId: d.varchar({ length: 128 }).notNull().references(() => teams.id),
+    amount: d.integer().notNull(),
+    proofUrl: d.varchar({ length: 512 }).notNull(),
+    status: d.varchar({ length: 32 }).default("pending").notNull(), // pending, verified, rejected
+    verifiedBy: d.text("verified_by").references(() => user.id),
+    createdAt: d
+      .timestamp({ withTimezone: true })
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+  }),
+  (t) => [
+    index("team_id_idx").on(t.teamId),
   ],
 );
 
@@ -39,6 +58,7 @@ export const user = pgTable("user", {
     .$defaultFn(() => false)
     .notNull(),
   image: text("image"),
+  role: text("role").default("participant").notNull(),
   createdAt: timestamp("created_at")
     .$defaultFn(() => /* @__PURE__ */ new Date())
     .notNull(),
@@ -94,6 +114,7 @@ export const verification = pgTable("verification", {
 export const userRelations = relations(user, ({ many }) => ({
   account: many(account),
   session: many(session),
+  teams: many(teams),
 }));
 
 export const accountRelations = relations(account, ({ one }) => ({
@@ -102,4 +123,14 @@ export const accountRelations = relations(account, ({ one }) => ({
 
 export const sessionRelations = relations(session, ({ one }) => ({
   user: one(user, { fields: [session.userId], references: [user.id] }),
+}));
+
+export const teamsRelations = relations(teams, ({ one, many }) => ({
+  leader: one(user, { fields: [teams.leaderId], references: [user.id] }),
+  payments: many(payments),
+}));
+
+export const paymentsRelations = relations(payments, ({ one }) => ({
+  team: one(teams, { fields: [payments.teamId], references: [teams.id] }),
+  verifier: one(user, { fields: [payments.verifiedBy], references: [user.id] }),
 }));
