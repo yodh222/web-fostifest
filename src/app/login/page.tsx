@@ -1,6 +1,36 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { authClient } from "~/server/better-auth/client";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const { data, error } = await authClient.signIn.email({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError(error.message || "Gagal masuk. Periksa kembali email dan password.");
+      setLoading(false);
+      return;
+    }
+
+    router.push("/dashboard");
+  };
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#111111] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] p-4">
       <div className="absolute inset-0 bg-green-900/10 mix-blend-overlay"></div>
@@ -10,11 +40,20 @@ export default function LoginPage() {
           <h1 className="font-pixel text-xl text-shadow-pixel-sm">LOGIN</h1>
         </div>
 
-        <form className="mt-8 space-y-6 text-left">
+        <form onSubmit={handleLogin} className="mt-8 space-y-6 text-left">
+          {error && (
+            <div className="bg-red-500/20 border-2 border-red-500 p-2 text-red-400 font-vt323 text-lg text-center">
+              {error}
+            </div>
+          )}
+
           <div>
             <label className="font-pixel text-xs text-gray-300">[EMAIL]</label>
             <input 
               type="email" 
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="mt-2 w-full border-4 border-[#1a0f07] bg-[#1a0f07] p-3 font-vt323 text-xl text-white outline-none focus:border-green-500" 
               placeholder="email@tim.com"
             />
@@ -24,16 +63,20 @@ export default function LoginPage() {
             <label className="font-pixel text-xs text-gray-300">[PASSWORD]</label>
             <input 
               type="password" 
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="mt-2 w-full border-4 border-[#1a0f07] bg-[#1a0f07] p-3 font-vt323 text-xl text-white outline-none focus:border-green-500" 
               placeholder="••••••••"
             />
           </div>
 
           <button 
-            type="button" 
-            className="pixel-btn-green font-pixel mt-4 w-full py-4 text-sm text-shadow-pixel-sm"
+            type="submit" 
+            disabled={loading}
+            className="pixel-btn-green font-pixel mt-4 w-full py-4 text-sm text-shadow-pixel-sm disabled:opacity-50"
           >
-            MASUK
+            {loading ? "MEMPROSES..." : "MASUK"}
           </button>
         </form>
 

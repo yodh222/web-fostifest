@@ -1,6 +1,38 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { authClient } from "~/server/better-auth/client";
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const [teamName, setTeamName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const { data, error } = await authClient.signUp.email({
+      email,
+      password,
+      name: teamName,
+    });
+
+    if (error) {
+      setError(error.message || "Gagal melakukan registrasi.");
+      setLoading(false);
+      return;
+    }
+
+    router.push("/dashboard");
+  };
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#111111] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] p-4">
       <div className="absolute inset-0 bg-green-900/10 mix-blend-overlay"></div>
@@ -10,11 +42,20 @@ export default function RegisterPage() {
           <h1 className="font-pixel text-xl text-shadow-pixel-sm">REGISTRASI</h1>
         </div>
 
-        <form className="mt-8 space-y-6 text-left">
+        <form onSubmit={handleRegister} className="mt-8 space-y-6 text-left">
+          {error && (
+            <div className="bg-red-500/20 border-2 border-red-500 p-2 text-red-400 font-vt323 text-lg text-center">
+              {error}
+            </div>
+          )}
+
           <div>
             <label className="font-pixel text-xs text-gray-300">[NAMA TIM]</label>
             <input 
               type="text" 
+              required
+              value={teamName}
+              onChange={(e) => setTeamName(e.target.value)}
               className="mt-2 w-full border-4 border-[#111] bg-[#1a1a1a] p-3 font-vt323 text-xl text-white outline-none focus:border-green-500" 
               placeholder="Masukkan nama tim"
             />
@@ -24,6 +65,9 @@ export default function RegisterPage() {
             <label className="font-pixel text-xs text-gray-300">[EMAIL KETUA]</label>
             <input 
               type="email" 
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="mt-2 w-full border-4 border-[#111] bg-[#1a1a1a] p-3 font-vt323 text-xl text-white outline-none focus:border-green-500" 
               placeholder="emailketua@mail.com"
             />
@@ -33,16 +77,20 @@ export default function RegisterPage() {
             <label className="font-pixel text-xs text-gray-300">[PASSWORD]</label>
             <input 
               type="password" 
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="mt-2 w-full border-4 border-[#111] bg-[#1a1a1a] p-3 font-vt323 text-xl text-white outline-none focus:border-green-500" 
               placeholder="••••••••"
             />
           </div>
 
           <button 
-            type="button" 
-            className="pixel-btn-yellow font-pixel mt-4 w-full py-4 text-sm text-shadow-pixel-sm text-white"
+            type="submit" 
+            disabled={loading}
+            className="pixel-btn-yellow font-pixel mt-4 w-full py-4 text-sm text-shadow-pixel-sm text-white disabled:opacity-50"
           >
-            BUAT AKUN
+            {loading ? "MEMPROSES..." : "BUAT AKUN"}
           </button>
         </form>
 
