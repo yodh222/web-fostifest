@@ -60,7 +60,7 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {isAdmin ? <AdminView /> : <ParticipantView />}
+        {isAdmin ? <AdminView /> : <ParticipantView user={session.user} />}
 
       </div>
     </main>
@@ -116,7 +116,7 @@ function AdminView() {
 // ----------------------------------------------------------------------
 // PARTICIPANT VIEW COMPONENT
 // ----------------------------------------------------------------------
-function ParticipantView() {
+function ParticipantView({ user }: { user: any }) {
   const [activeTab, setActiveTab] = useState<"team" | "workshop">("team");
   
   // States for creating a team
@@ -125,6 +125,9 @@ function ParticipantView() {
   
   // State for joining a team
   const [joinCode, setJoinCode] = useState("");
+
+  // Determine if user has a team
+  const hasTeam = !!user.teamId;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -151,7 +154,7 @@ function ParticipantView() {
         {activeTab === "team" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Create Team Card */}
-            <div className="pixel-card-stone p-6">
+            <div className={`pixel-card-stone p-6 ${hasTeam ? 'opacity-50 pointer-events-none' : ''}`}>
               <h3 className="font-pixel text-lg text-yellow-400 mb-4">BUAT TIM BARU</h3>
               <p className="font-vt323 text-lg text-gray-300 mb-6">Jadilah ketua dan bentuk tim tangguhmu sendiri.</p>
               
@@ -185,7 +188,7 @@ function ParticipantView() {
             </div>
 
             {/* Join Team Card */}
-            <div className="pixel-card-stone p-6 border-blue-500">
+            <div className={`pixel-card-stone p-6 border-blue-500 ${hasTeam ? 'opacity-50 pointer-events-none' : ''}`}>
               <h3 className="font-pixel text-lg text-blue-400 mb-4">GABUNG TIM</h3>
               <p className="font-vt323 text-lg text-gray-300 mb-6">Punya kode tim dari ketua kamu? Masukkan di sini.</p>
               
@@ -205,6 +208,13 @@ function ParticipantView() {
                 </button>
               </form>
             </div>
+            
+            {hasTeam && (
+              <div className="md:col-span-2 pixel-card-wood p-4 mt-2 text-center border-green-500">
+                <p className="font-pixel text-sm text-green-400">✅ ANDA SUDAH TERGABUNG DALAM TIM</p>
+                <p className="font-vt323 text-lg text-gray-300 mt-2">Anda tidak bisa membuat atau bergabung dengan tim lain.</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -225,51 +235,66 @@ function ParticipantView() {
 
       {/* RIGHT PANEL: Individual Requirements */}
       <div className="lg:col-span-1">
-        <div className="pixel-card-stone p-6 sticky top-8 border-orange-500">
-          <h3 className="font-pixel text-lg text-orange-400 mb-2">SYARAT INDIVIDU</h3>
-          <p className="font-vt323 text-lg text-gray-300 mb-6 border-b-2 border-dashed border-[#444] pb-4">Setiap anggota wajib melengkapi berkas ini agar tim bisa diverifikasi.</p>
-          
-          <div className="space-y-6">
+        {hasTeam ? (
+          <div className="pixel-card-stone p-6 sticky top-8 border-orange-500">
+            <h3 className="font-pixel text-lg text-orange-400 mb-2">SYARAT INDIVIDU</h3>
+            <p className="font-vt323 text-lg text-gray-300 mb-6 border-b-2 border-dashed border-[#444] pb-4">Setiap anggota wajib melengkapi berkas ini agar tim bisa diverifikasi.</p>
             
-            {/* KTM */}
-            <div>
-              <label className="font-pixel text-[10px] text-gray-400 flex justify-between">
-                <span>KARTU MAHASISWA / PELAJAR</span>
-                <span className="text-red-400">✖ KOSONG</span>
-              </label>
-              <div className="mt-2 flex h-20 flex-col items-center justify-center border-2 border-dashed border-[#4a4a4a] bg-[#1a1a1a] cursor-pointer hover:border-orange-500 transition-colors">
-                <span className="font-vt323 text-lg text-gray-400">Unggah Gambar (JPG/PNG)</span>
+            <div className="space-y-6">
+              
+              {/* KTM */}
+              <div>
+                <label className="font-pixel text-[10px] text-gray-400 flex justify-between">
+                  <span>KARTU MAHASISWA / PELAJAR</span>
+                  <span className="text-red-400">✖ KOSONG</span>
+                </label>
+                <div className="mt-2 flex h-20 flex-col items-center justify-center border-2 border-dashed border-[#4a4a4a] bg-[#1a1a1a] cursor-pointer hover:border-orange-500 transition-colors">
+                  <span className="font-vt323 text-lg text-gray-400">Unggah Gambar (JPG/PNG)</span>
+                </div>
               </div>
-            </div>
 
-            {/* Twibbon */}
-            <div>
-              <label className="font-pixel text-[10px] text-gray-400 flex justify-between">
-                <span>BUKTI POST TWIBBON</span>
-                <span className="text-red-400">✖ KOSONG</span>
-              </label>
-              <div className="mt-2 flex h-20 flex-col items-center justify-center border-2 border-dashed border-[#4a4a4a] bg-[#1a1a1a] cursor-pointer hover:border-orange-500 transition-colors">
-                <span className="font-vt323 text-lg text-gray-400">Unggah Screenshot Twibbon</span>
+              {/* Twibbon */}
+              <div>
+                <label className="font-pixel text-[10px] text-gray-400 flex justify-between">
+                  <span>BUKTI POST TWIBBON</span>
+                  <span className="text-red-400">✖ KOSONG</span>
+                </label>
+                <div className="mt-2 flex h-20 flex-col items-center justify-center border-2 border-dashed border-[#4a4a4a] bg-[#1a1a1a] cursor-pointer hover:border-orange-500 transition-colors">
+                  <span className="font-vt323 text-lg text-gray-400">Unggah Screenshot Twibbon</span>
+                </div>
               </div>
-            </div>
 
-            {/* Follow IG */}
-            <div>
-              <label className="font-pixel text-[10px] text-gray-400 flex justify-between">
-                <span>BUKTI FOLLOW IG @FOSTI</span>
-                <span className="text-red-400">✖ KOSONG</span>
-              </label>
-              <div className="mt-2 flex h-20 flex-col items-center justify-center border-2 border-dashed border-[#4a4a4a] bg-[#1a1a1a] cursor-pointer hover:border-orange-500 transition-colors">
-                <span className="font-vt323 text-lg text-gray-400">Unggah Screenshot Follow</span>
+              {/* Follow IG */}
+              <div>
+                <label className="font-pixel text-[10px] text-gray-400 flex justify-between">
+                  <span>BUKTI FOLLOW IG @FOSTI</span>
+                  <span className="text-red-400">✖ KOSONG</span>
+                </label>
+                <div className="mt-2 flex h-20 flex-col items-center justify-center border-2 border-dashed border-[#4a4a4a] bg-[#1a1a1a] cursor-pointer hover:border-orange-500 transition-colors">
+                  <span className="font-vt323 text-lg text-gray-400">Unggah Screenshot Follow</span>
+                </div>
               </div>
+
+              <button type="button" className="pixel-btn-green font-pixel w-full py-3 mt-4 text-xs text-shadow-pixel-sm" disabled>
+                SIMPAN BERKAS
+              </button>
+
             </div>
-
-            <button type="button" className="pixel-btn-green font-pixel w-full py-3 mt-4 text-xs text-shadow-pixel-sm" disabled>
-              SIMPAN BERKAS
-            </button>
-
           </div>
-        </div>
+        ) : (
+          <div className="pixel-card-stone p-6 sticky top-8 border-gray-600 opacity-80">
+            <h3 className="font-pixel text-lg text-gray-500 mb-2">SYARAT INDIVIDU</h3>
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <span className="text-4xl mb-4">🔒</span>
+              <p className="font-vt323 text-xl text-gray-400">
+                Fitur ini terkunci.
+              </p>
+              <p className="font-vt323 text-lg text-gray-500 mt-2">
+                Silakan buat tim baru atau gabung ke tim yang sudah ada untuk mulai mengunggah persyaratan administrasi Anda.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
     </div>
