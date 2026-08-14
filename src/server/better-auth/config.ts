@@ -18,6 +18,17 @@ export const auth = betterAuth({
       redirectURI: "http://localhost:3000/api/auth/callback/github",
     },
   },
+  user: {
+    additionalFields: {
+      role: { type: "string" },
+      isWorkshopParticipant: { type: "boolean" },
+      teamId: { type: "string", required: false },
+      ktmUrl: { type: "string", required: false },
+      twibbonUrl: { type: "string", required: false },
+      igUrl: { type: "string", required: false },
+      requirementsStatus: { type: "string" },
+    },
+  },
 });
 
 export type Session = typeof auth.$Infer.Session;

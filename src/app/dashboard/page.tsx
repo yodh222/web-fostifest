@@ -67,10 +67,42 @@ export default function DashboardPage() {
   );
 }
 
+// At the top of the file, we also need to import the admin actions:
+import { getAdminDataAction, verifyPaymentAction, verifyRequirementsAction } from "~/server/actions";
+
 // ----------------------------------------------------------------------
 // ADMIN VIEW COMPONENT
 // ----------------------------------------------------------------------
 function AdminView() {
+  const [teams, setTeams] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getAdminDataAction()
+      .then(data => {
+        setTeams(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
+
+  const handleVerifyPayment = async (teamId: string, status: "verified" | "rejected") => {
+    if (confirm(`Apakah Anda yakin ingin mengubah status pembayaran tim ini menjadi ${status}?`)) {
+      try {
+        await verifyPaymentAction(teamId, status);
+        const data = await getAdminDataAction();
+        setTeams(data);
+      } catch (err: any) {
+        alert(err.message);
+      }
+    }
+  };
+
+  const pendingTeams = teams.filter(t => t.payment?.status === "pending").length;
+
   return (
     <div className="flex flex-col items-center">
       <div className="pixel-card-wood w-full p-4">
@@ -83,8 +115,8 @@ function AdminView() {
               </div>
             </div>
             <div className="font-pixel text-xs text-right text-gray-900 bg-white/20 p-2 border-2 border-[#3b2514]">
-              <p>TOTAL TIM: <span className="text-yellow-200">0</span></p>
-              <p>MENUNGGU VERIFIKASI: <span className="text-red-200">0</span></p>
+              <p>TOTAL TIM: <span className="text-yellow-200">{teams.length}</span></p>
+              <p>MENUNGGU VERIFIKASI: <span className="text-red-200">{pendingTeams}</span></p>
             </div>
           </div>
 
@@ -96,14 +128,59 @@ function AdminView() {
                   <th className="pb-4 px-2">KODE TIM</th>
                   <th className="pb-4 px-2">KATEGORI</th>
                   <th className="pb-4 px-2">STATUS PEMBAYARAN</th>
-                  <th className="pb-4 px-2">STATUS SYARAT (ANGGOTA)</th>
-                  <th className="pb-4 px-2">AKSI</th>
+                  <th className="pb-4 px-2">ANGGOTA & SYARAT</th>
+                  <th className="pb-4 px-2">AKSI (BAYAR)</th>
                 </tr>
               </thead>
               <tbody className="font-pixel text-xs text-gray-400">
-                <tr>
-                  <td colSpan={6} className="py-8 text-center">Belum ada data tim.</td>
-                </tr>
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-white">Memuat data...</td>
+                  </tr>
+                ) : teams.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center">Belum ada data tim.</td>
+                  </tr>
+                ) : (
+                  teams.map((t) => (
+                    <tr key={t.id} className="border-b-2 border-[#3b2514]/50 hover:bg-[#3b2514]/30">
+                      <td className="py-4 px-2 text-white">{t.name}</td>
+                      <td className="py-4 px-2 text-yellow-300">{t.teamCode}</td>
+                      <td className="py-4 px-2">{t.category === 'software_dev' ? 'Software Dev' : 'UI/UX Design'}</td>
+                      <td className="py-4 px-2">
+                        {t.payment?.proofUrl ? (
+                          <a href={t.payment.proofUrl} target="_blank" rel="noreferrer" className={`block w-fit px-2 py-1 rounded hover:underline ${t.payment?.status === 'verified' ? 'bg-green-900 text-green-300' : t.payment?.status === 'rejected' ? 'bg-red-900 text-red-300' : 'bg-yellow-900 text-yellow-300'}`}>
+                            {t.payment?.status?.toUpperCase() || 'UNKNOWN'} (LIHAT BUKTI)
+                          </a>
+                        ) : (
+                          <span className="px-2 py-1 rounded bg-gray-900 text-gray-500">BELUM BAYAR</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-2">
+                        <ul className="space-y-1">
+                          {t.members?.map((m: any) => (
+                            <li key={m.id} className="flex gap-2 items-center">
+                              <span>- {m.name}</span>
+                              <div className="flex gap-1">
+                                {m.ktmUrl ? <a href={m.ktmUrl} target="_blank" rel="noreferrer" title="KTM" className="text-green-500 hover:underline">[K]</a> : <span title="KTM" className="text-gray-600">[K]</span>}
+                                {m.twibbonUrl ? <a href={m.twibbonUrl} target="_blank" rel="noreferrer" title="Twibbon" className="text-green-500 hover:underline">[T]</a> : <span title="Twibbon" className="text-gray-600">[T]</span>}
+                                {m.igUrl ? <a href={m.igUrl} target="_blank" rel="noreferrer" title="IG" className="text-green-500 hover:underline">[I]</a> : <span title="IG" className="text-gray-600">[I]</span>}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </td>
+                      <td className="py-4 px-2">
+                        {t.payment?.status !== 'verified' && (
+                          <button onClick={() => handleVerifyPayment(t.teamId, "verified")} className="bg-green-600 text-white px-3 py-1 hover:bg-green-500 mr-2">VERIFIKASI</button>
+                        )}
+                        {t.payment?.status !== 'rejected' && (
+                          <button onClick={() => handleVerifyPayment(t.teamId, "rejected")} className="bg-red-600 text-white px-3 py-1 hover:bg-red-500">TOLAK</button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -113,21 +190,147 @@ function AdminView() {
   );
 }
 
-// ----------------------------------------------------------------------
-// PARTICIPANT VIEW COMPONENT
-// ----------------------------------------------------------------------
+import { createTeamAction, joinTeamAction, uploadPaymentAction } from "~/server/actions";
+
+// At the top of ParticipantView, add:
+import { uploadRequirementAction } from "~/server/actions";
+import { useRef } from "react";
+
+// (Inside ParticipantView, below states)
 function ParticipantView({ user }: { user: any }) {
   const [activeTab, setActiveTab] = useState<"team" | "workshop">("team");
   
   // States for creating a team
   const [teamName, setTeamName] = useState("");
   const [competitionCategory, setCompetitionCategory] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
   
   // State for joining a team
   const [joinCode, setJoinCode] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
+
+  // States for uploads
+  const [uploadingTarget, setUploadingTarget] = useState<string | null>(null);
 
   // Determine if user has a team
   const hasTeam = !!user.teamId;
+
+  const handleCreateTeam = async () => {
+    if (!teamName || !competitionCategory) {
+      alert("Mohon lengkapi nama tim dan kategori!");
+      return;
+    }
+    setIsCreating(true);
+    try {
+      const res = await createTeamAction(teamName, competitionCategory);
+      if (res.success) {
+        alert("Berhasil membuat tim! Kode tim Anda: " + res.teamCode);
+        window.location.reload(); 
+      }
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleJoinTeam = async () => {
+    if (!joinCode) {
+      alert("Masukkan kode tim!");
+      return;
+    }
+    setIsJoining(true);
+    try {
+      const res = await joinTeamAction(joinCode);
+      if (res.success) {
+        alert("Berhasil bergabung ke tim!");
+        window.location.reload();
+      }
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  const handlePaymentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Maksimal ukuran berkas adalah 5MB!");
+      return;
+    }
+    setUploadingTarget("payment");
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await uploadPaymentAction(formData);
+      if (res.success) {
+        alert("Berhasil mengunggah bukti pembayaran tim!");
+        window.location.reload();
+      }
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setUploadingTarget(null);
+    }
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "ktm" | "twibbon" | "ig") => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Maksimal ukuran berkas adalah 2MB!");
+      return;
+    }
+
+    setUploadingTarget(type);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("type", type);
+
+    try {
+      const res = await uploadRequirementAction(formData);
+      if (res.success) {
+        alert("Berhasil mengunggah berkas!");
+        window.location.reload();
+      }
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setUploadingTarget(null);
+    }
+  };
+
+  // UI Helpers for Upload boxes
+  const renderUploadBox = (title: string, type: "ktm" | "twibbon" | "ig", currentUrl?: string | null) => {
+    const isUploading = uploadingTarget === type;
+    return (
+      <div>
+        <label className="font-pixel text-[10px] text-gray-400 flex justify-between">
+          <span>{title}</span>
+          {currentUrl ? (
+            <span className="text-green-400">✔ TERUNGGAH</span>
+          ) : (
+            <span className="text-red-400">✖ KOSONG</span>
+          )}
+        </label>
+        <div className="relative mt-2 flex h-20 flex-col items-center justify-center border-2 border-dashed border-[#4a4a4a] bg-[#1a1a1a] cursor-pointer hover:border-orange-500 transition-colors">
+          <span className="font-vt323 text-lg text-gray-400">
+            {isUploading ? "MENGUNGGAH..." : currentUrl ? "Ubah Berkas" : "Pilih Berkas (Max 2MB)"}
+          </span>
+          <input 
+            type="file" 
+            accept="image/png, image/jpeg"
+            onChange={(e) => handleUpload(e, type)}
+            disabled={isUploading}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" 
+          />
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -181,8 +384,13 @@ function ParticipantView({ user }: { user: any }) {
                     <option value="ui_ux">UI/UX Design</option>
                   </select>
                 </div>
-                <button type="button" className="pixel-btn-yellow font-pixel w-full py-3 mt-4 text-xs text-shadow-pixel-sm text-white">
-                  BUAT TIM & DAPATKAN KODE
+                <button 
+                  type="button" 
+                  onClick={handleCreateTeam}
+                  disabled={isCreating}
+                  className="pixel-btn-yellow font-pixel w-full py-3 mt-4 text-xs text-shadow-pixel-sm text-white disabled:opacity-50"
+                >
+                  {isCreating ? "MEMPROSES..." : "BUAT TIM & DAPATKAN KODE"}
                 </button>
               </form>
             </div>
@@ -203,16 +411,42 @@ function ParticipantView({ user }: { user: any }) {
                     placeholder="FST-XXXXXX"
                   />
                 </div>
-                <button type="button" className="pixel-btn-green font-pixel w-full py-3 mt-4 text-xs text-shadow-pixel-sm">
-                  GABUNG SEKARANG
+                <button 
+                  type="button" 
+                  onClick={handleJoinTeam}
+                  disabled={isJoining}
+                  className="pixel-btn-green font-pixel w-full py-3 mt-4 text-xs text-shadow-pixel-sm disabled:opacity-50"
+                >
+                  {isJoining ? "MEMPROSES..." : "GABUNG SEKARANG"}
                 </button>
               </form>
             </div>
             
             {hasTeam && (
-              <div className="md:col-span-2 pixel-card-wood p-4 mt-2 text-center border-green-500">
-                <p className="font-pixel text-sm text-green-400">✅ ANDA SUDAH TERGABUNG DALAM TIM</p>
-                <p className="font-vt323 text-lg text-gray-300 mt-2">Anda tidak bisa membuat atau bergabung dengan tim lain.</p>
+              <div className="md:col-span-2 pixel-card-wood p-6 mt-2 border-green-500">
+                <div className="text-center mb-6">
+                  <p className="font-pixel text-sm text-green-400">✅ ANDA SUDAH TERGABUNG DALAM TIM</p>
+                  <p className="font-vt323 text-lg text-gray-300 mt-2">Selesaikan pembayaran untuk memvalidasi pendaftaran tim Anda.</p>
+                </div>
+                
+                <div className="border-t-2 border-dashed border-[#543b22] pt-6">
+                  <label className="font-pixel text-xs text-yellow-300 flex justify-between">
+                    <span>BUKTI PEMBAYARAN TIM</span>
+                  </label>
+                  <p className="font-vt323 text-lg text-gray-400 mb-2">Unggah bukti transfer (Max 5MB). Pastikan jelas.</p>
+                  <div className="relative mt-2 flex h-20 flex-col items-center justify-center border-2 border-dashed border-[#8a633a] bg-[#3b2514]/30 cursor-pointer hover:border-yellow-500 transition-colors">
+                    <span className="font-vt323 text-xl text-yellow-100">
+                      {uploadingTarget === "payment" ? "MENGUNGGAH..." : "Klik untuk Unggah Bukti Pembayaran"}
+                    </span>
+                    <input 
+                      type="file" 
+                      accept="image/png, image/jpeg, application/pdf"
+                      onChange={handlePaymentUpload}
+                      disabled={uploadingTarget === "payment"}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" 
+                    />
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -241,44 +475,9 @@ function ParticipantView({ user }: { user: any }) {
             <p className="font-vt323 text-lg text-gray-300 mb-6 border-b-2 border-dashed border-[#444] pb-4">Setiap anggota wajib melengkapi berkas ini agar tim bisa diverifikasi.</p>
             
             <div className="space-y-6">
-              
-              {/* KTM */}
-              <div>
-                <label className="font-pixel text-[10px] text-gray-400 flex justify-between">
-                  <span>KARTU MAHASISWA / PELAJAR</span>
-                  <span className="text-red-400">✖ KOSONG</span>
-                </label>
-                <div className="mt-2 flex h-20 flex-col items-center justify-center border-2 border-dashed border-[#4a4a4a] bg-[#1a1a1a] cursor-pointer hover:border-orange-500 transition-colors">
-                  <span className="font-vt323 text-lg text-gray-400">Unggah Gambar (JPG/PNG)</span>
-                </div>
-              </div>
-
-              {/* Twibbon */}
-              <div>
-                <label className="font-pixel text-[10px] text-gray-400 flex justify-between">
-                  <span>BUKTI POST TWIBBON</span>
-                  <span className="text-red-400">✖ KOSONG</span>
-                </label>
-                <div className="mt-2 flex h-20 flex-col items-center justify-center border-2 border-dashed border-[#4a4a4a] bg-[#1a1a1a] cursor-pointer hover:border-orange-500 transition-colors">
-                  <span className="font-vt323 text-lg text-gray-400">Unggah Screenshot Twibbon</span>
-                </div>
-              </div>
-
-              {/* Follow IG */}
-              <div>
-                <label className="font-pixel text-[10px] text-gray-400 flex justify-between">
-                  <span>BUKTI FOLLOW IG @FOSTI</span>
-                  <span className="text-red-400">✖ KOSONG</span>
-                </label>
-                <div className="mt-2 flex h-20 flex-col items-center justify-center border-2 border-dashed border-[#4a4a4a] bg-[#1a1a1a] cursor-pointer hover:border-orange-500 transition-colors">
-                  <span className="font-vt323 text-lg text-gray-400">Unggah Screenshot Follow</span>
-                </div>
-              </div>
-
-              <button type="button" className="pixel-btn-green font-pixel w-full py-3 mt-4 text-xs text-shadow-pixel-sm" disabled>
-                SIMPAN BERKAS
-              </button>
-
+              {renderUploadBox("KARTU MAHASISWA / PELAJAR", "ktm", user.ktmUrl)}
+              {renderUploadBox("BUKTI POST TWIBBON", "twibbon", user.twibbonUrl)}
+              {renderUploadBox("BUKTI FOLLOW IG @FOSTI", "ig", user.igUrl)}
             </div>
           </div>
         ) : (
