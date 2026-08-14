@@ -1,6 +1,115 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-pixel: var(--font-pixel);
+  --font-vt323: var(--font-vt323);
+  
+  --color-mc-dirt: #866043;
+  --color-mc-grass: #4a8a2a;
+  --color-mc-grass-light: #5ba337;
+  --color-mc-stone: #2d2d2d;
+  --color-mc-stone-light: #4a4a4a;
+  --color-mc-wood: #5c3a21;
+  --color-mc-wood-light: #8a5a33;
+}
+
+@utility font-pixel {
+  font-family: var(--font-pixel);
+}
+
+@utility font-vt323 {
+  font-family: var(--font-vt323);
+}
+
+@layer utilities {
+  .pixel-box {
+    background-color: var(--color-mc-dirt);
+    border: 4px solid #3c2a1c;
+    box-shadow: 
+      inset 4px 4px 0px 0px rgba(255, 255, 255, 0.2),
+      inset -4px -4px 0px 0px rgba(0, 0, 0, 0.4);
+    image-rendering: pixelated;
+  }
+
+  .pixel-btn-green {
+    background-color: var(--color-mc-grass);
+    border: 4px solid #1a3a0e;
+    box-shadow: 
+      inset 4px 4px 0px 0px rgba(255, 255, 255, 0.3),
+      inset -4px -4px 0px 0px rgba(0, 0, 0, 0.5);
+    transition: transform 0.1s;
+    cursor: pointer;
+  }
+  .pixel-btn-green:hover {
+    background-color: var(--color-mc-grass-light);
+  }
+  .pixel-btn-green:active {
+    box-shadow: inset 4px 4px 0px 0px rgba(0, 0, 0, 0.5), inset -4px -4px 0px 0px rgba(255, 255, 255, 0.1);
+    transform: translateY(2px);
+  }
+
+  .pixel-btn-yellow {
+    background-color: #d4a017;
+    border: 4px solid #5a4208;
+    box-shadow: 
+      inset 4px 4px 0px 0px rgba(255, 255, 255, 0.4),
+      inset -4px -4px 0px 0px rgba(0, 0, 0, 0.5);
+    transition: transform 0.1s;
+    cursor: pointer;
+  }
+  .pixel-btn-yellow:hover {
+    background-color: #eab308;
+  }
+  .pixel-btn-yellow:active {
+    box-shadow: inset 4px 4px 0px 0px rgba(0, 0, 0, 0.5), inset -4px -4px 0px 0px rgba(255, 255, 255, 0.1);
+    transform: translateY(2px);
+  }
+
+  .pixel-card-stone {
+    background-color: #2a2a2a;
+    border: 4px solid #1a1a1a;
+    box-shadow: 
+      inset 4px 4px 0px 0px #4a4a4a,
+      inset -4px -4px 0px 0px #111111;
+  }
+
+  .pixel-card-wood {
+    background-color: #3b2514;
+    border: 4px solid #1a0f07;
+    box-shadow: 
+      inset 4px 4px 0px 0px #6a4223,
+      inset -4px -4px 0px 0px #1a0f07;
+  }
+
+  .pixel-card-wood-light {
+    background-color: #8a5a33;
+    border: 4px solid #3b2514;
+    box-shadow: 
+      inset 4px 4px 0px 0px #a67246,
+      inset -4px -4px 0px 0px #4a2e19;
+  }
+
+  .text-shadow-pixel {
+    text-shadow: 3px 3px 0 #000;
+  }
+  
+  .text-shadow-pixel-sm {
+    text-shadow: 2px 2px 0 #000;
+  }
+}
+
+/* Animasi Marquee (Teks Berjalan) */
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 20s linear infinite;
 }
