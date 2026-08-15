@@ -38,12 +38,15 @@ export default function LoginPage() {
       <div className="absolute -top-40 -left-40 h-[300px] w-[300px] rounded-full bg-blue-500/10 blur-[100px] animate-pulse-glow"></div>
       <div className="absolute -bottom-40 -right-40 h-[300px] w-[300px] rounded-full bg-green-500/10 blur-[100px] animate-pulse-glow"></div>
 
-      <div className="pixel-card-wood relative z-10 w-full max-w-md p-2 animate-float">
-        <div className="pixel-card-wood-light relative p-8 text-center text-white">
-          <Link href="/" className="absolute -top-4 -left-4 font-pixel text-xs bg-red-900 text-white px-3 py-2 border-2 border-red-950 hover:bg-red-800 transition-colors">
+      <div className="relative z-10 w-full max-w-md flex flex-col gap-6 animate-float">
+        <div className="self-start pl-2">
+          <Link href="/" className="font-pixel text-xs bg-red-900 text-white px-4 py-2 border-4 border-red-950 hover:bg-red-800 transition-colors shadow-[4px_4px_0_rgba(0,0,0,0.5)]">
             {"< KEMBALI"}
           </Link>
-          <div className="absolute -top-6 left-1/2 -translate-x-1/2 border-4 border-[#1a0f07] bg-[#5c3a21] px-6 py-2">
+        </div>
+        <div className="pixel-card-wood p-2">
+          <div className="pixel-card-wood-light relative p-8 text-center text-white">
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 border-4 border-[#1a0f07] bg-[#5c3a21] px-6 py-2">
             <h1 className="font-pixel text-xl text-shadow-pixel-sm hover-glitch cursor-default">LOGIN</h1>
           </div>
 
