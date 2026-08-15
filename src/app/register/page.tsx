@@ -36,9 +36,8 @@ export default function RegisterPage() {
   return (
     <main className="min-h-screen bg-[#111111] text-white flex items-center justify-center p-6 relative overflow-hidden scanline">
       {/* Background Ornaments */}
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-      <div className="absolute -top-40 -left-40 h-[300px] w-[300px] rounded-full bg-blue-500/10 blur-[100px] animate-pulse-glow"></div>
-      <div className="absolute -bottom-40 -right-40 h-[300px] w-[300px] rounded-full bg-yellow-500/10 blur-[100px] animate-pulse-glow"></div>
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20 animate-slide-bg"></div>
+      <div className="absolute left-1/2 top-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-yellow-500/20 blur-[120px] animate-pulse-glow"></div>
       
       <div className="pixel-card-stone relative z-10 w-full max-w-md p-2 animate-float">
         <div className="pixel-card-stone relative p-8 text-center text-white border-none shadow-none">
