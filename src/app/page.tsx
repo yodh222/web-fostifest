@@ -40,9 +40,6 @@ export default function Home() {
           <Link href="/register" className="pixel-btn-yellow font-pixel px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm text-shadow-pixel-sm hover:scale-[1.02] active:scale-[0.98] transition-transform">
             DAFTAR SEKARANG
           </Link>
-          <Link href="/admin" className="font-pixel text-[10px] md:text-xs text-gray-300 text-shadow-pixel-sm hover:text-white transition-colors absolute top-full mt-2 right-0 whitespace-nowrap">
-            🔑 [PANITIA]
-          </Link>
         </motion.div>
       </nav>
 
