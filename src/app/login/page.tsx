@@ -88,9 +88,9 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="font-vt323 mt-6 text-xl text-gray-300">
+          <p className="font-vt323 mt-6 text-xl text-gray-300 text-center">
             Belum punya akun tim?{" "}
-            <Link href="/register" className="font-pixel text-xs text-yellow-400 hover:text-green-400 transition-colors">
+            <Link href="/register" className="font-pixel text-xs text-green-400 hover:text-white transition-colors">
               [DAFTAR DI SINI]
             </Link>
           </p>
