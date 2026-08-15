@@ -39,14 +39,14 @@ export default function RegisterPage() {
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20 animate-slide-bg"></div>
       <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-yellow-500/40 blur-[100px] animate-pulse"></div>
       
-      <div className="pixel-card-stone relative z-10 w-full max-w-md p-2 animate-float">
-        <div className="pixel-card-stone relative p-8 text-center text-white border-none shadow-none">
-          <Link href="/" className="absolute -top-4 -left-4 h-10 px-3 flex items-center justify-center font-pixel text-sm bg-[#222] text-gray-400 border-4 border-[#111] shadow-[4px_4px_0_rgba(0,0,0,0.8)] hover:bg-[#333] hover:text-white hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[6px_6px_0_rgba(0,0,0,0.8)] active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0_rgba(0,0,0,0.8)] transition-all group gap-1" title="Kembali">
+      <div className="pixel-card-green relative z-10 w-full max-w-md p-2 animate-float">
+        <div className="pixel-card-green-light relative p-8 text-center text-white">
+          <Link href="/" className="absolute -top-4 -left-4 h-10 px-3 flex items-center justify-center font-pixel text-sm bg-green-950 text-green-300 border-4 border-green-900 shadow-[4px_4px_0_rgba(0,0,0,0.8)] hover:bg-green-900 hover:text-white hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[6px_6px_0_rgba(0,0,0,0.8)] active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0_rgba(0,0,0,0.8)] transition-all group gap-1" title="Kembali">
             <span className="animate-arrow">{"<"}</span>
             <span className="animate-arrow" style={{animationDelay: "150ms"}}>{"<"}</span>
             <span className="animate-arrow" style={{animationDelay: "300ms"}}>{"<"}</span>
           </Link>
-          <div className="absolute -top-6 left-1/2 -translate-x-1/2 border-4 border-[#1a1a1a] bg-[#4a4a4a] px-6 py-2 whitespace-nowrap">
+          <div className="absolute -top-6 left-1/2 -translate-x-1/2 border-4 border-[#0e1b0a] bg-[#1c3614] px-6 py-2 whitespace-nowrap">
             <h1 className="font-pixel text-xl text-shadow-pixel-sm hover-glitch cursor-default">REGISTRASI</h1>
           </div>
 
@@ -58,37 +58,37 @@ export default function RegisterPage() {
             )}
 
             <div>
-              <label className="font-pixel text-xs text-gray-300">[NAMA TIM / PESERTA]</label>
+              <label className="font-pixel text-xs text-green-100">[NAMA TIM / PESERTA]</label>
               <input 
                 type="text" 
                 required
                 value={teamName}
                 onChange={(e) => setTeamName(e.target.value)}
-                className="mt-2 w-full border-4 border-[#111] bg-[#1a1a1a] p-3 font-vt323 text-xl text-white outline-none focus:border-yellow-500 transition-colors" 
+                className="mt-2 w-full border-4 border-[#0e1b0a] bg-[#15290f] p-3 font-vt323 text-xl text-white outline-none focus:border-yellow-400 transition-colors" 
                 placeholder="Masukkan nama"
               />
             </div>
 
             <div>
-              <label className="font-pixel text-xs text-gray-300">[EMAIL]</label>
+              <label className="font-pixel text-xs text-green-100">[EMAIL]</label>
               <input 
                 type="email" 
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-2 w-full border-4 border-[#111] bg-[#1a1a1a] p-3 font-vt323 text-xl text-white outline-none focus:border-yellow-500 transition-colors" 
+                className="mt-2 w-full border-4 border-[#0e1b0a] bg-[#15290f] p-3 font-vt323 text-xl text-white outline-none focus:border-yellow-400 transition-colors" 
                 placeholder="email@peserta.com"
               />
             </div>
             
             <div>
-              <label className="font-pixel text-xs text-gray-300">[PASSWORD]</label>
+              <label className="font-pixel text-xs text-green-100">[PASSWORD]</label>
               <input 
                 type="password" 
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-2 w-full border-4 border-[#111] bg-[#1a1a1a] p-3 font-vt323 text-xl text-white outline-none focus:border-yellow-500 transition-colors" 
+                className="mt-2 w-full border-4 border-[#0e1b0a] bg-[#15290f] p-3 font-vt323 text-xl text-white outline-none focus:border-yellow-400 transition-colors" 
                 placeholder="••••••••"
               />
             </div>
@@ -102,9 +102,9 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          <p className="font-vt323 mt-6 text-xl text-gray-300 text-center">
+          <p className="font-vt323 mt-6 text-xl text-green-100 text-center">
             Sudah punya akun?{" "}
-            <Link href="/login" className="font-pixel text-xs text-green-400 hover:text-white transition-colors">
+            <Link href="/login" className="font-pixel text-xs text-yellow-400 hover:text-white transition-colors">
               [MASUK DI SINI]
             </Link>
           </p>

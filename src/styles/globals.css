@@ -89,6 +89,22 @@
       inset -4px -4px 0px 0px #4a2e19;
   }
 
+  .pixel-card-green {
+    background-color: #1c3614;
+    border: 4px solid #0e1b0a;
+    box-shadow: 
+      inset 4px 4px 0px 0px #2b541e,
+      inset -4px -4px 0px 0px #0e1b0a;
+  }
+
+  .pixel-card-green-light {
+    background-color: #2b541e;
+    border: 4px solid #1c3614;
+    box-shadow: 
+      inset 4px 4px 0px 0px #4a8a2a,
+      inset -4px -4px 0px 0px #182e11;
+  }
+
   .text-shadow-pixel {
     text-shadow: 3px 3px 0 #000;
   }
