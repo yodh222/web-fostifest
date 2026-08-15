@@ -42,8 +42,10 @@ export default function RegisterPage() {
       
       <div className="pixel-card-stone relative z-10 w-full max-w-md p-2 animate-float">
         <div className="pixel-card-stone relative p-8 text-center text-white border-none shadow-none">
-          <Link href="/" className="absolute -top-4 -left-4 w-10 h-10 flex items-center justify-center font-pixel text-xl bg-[#222] text-gray-400 border-4 border-[#111] shadow-[4px_4px_0_rgba(0,0,0,0.8)] hover:bg-[#333] hover:text-white hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[6px_6px_0_rgba(0,0,0,0.8)] active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0_rgba(0,0,0,0.8)] transition-all group" title="Kembali">
-            <span className="group-hover:-translate-x-1 transition-transform duration-300">{"<"}</span>
+          <Link href="/" className="absolute -top-4 -left-4 h-10 px-3 flex items-center justify-center font-pixel text-sm bg-[#222] text-gray-400 border-4 border-[#111] shadow-[4px_4px_0_rgba(0,0,0,0.8)] hover:bg-[#333] hover:text-white hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[6px_6px_0_rgba(0,0,0,0.8)] active:translate-x-0 active:translate-y-0 active:shadow-[2px_2px_0_rgba(0,0,0,0.8)] transition-all group gap-1" title="Kembali">
+            <span className="animate-arrow">{"<"}</span>
+            <span className="animate-arrow" style={{animationDelay: "150ms"}}>{"<"}</span>
+            <span className="animate-arrow" style={{animationDelay: "300ms"}}>{"<"}</span>
           </Link>
           <div className="absolute -top-6 left-1/2 -translate-x-1/2 border-4 border-[#1a1a1a] bg-[#4a4a4a] px-6 py-2 whitespace-nowrap">
             <h1 className="font-pixel text-xl text-shadow-pixel-sm hover-glitch cursor-default">REGISTRASI</h1>
