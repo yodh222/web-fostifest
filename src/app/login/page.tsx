@@ -33,11 +33,6 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen bg-[#111111] text-white flex items-center justify-center p-6 relative overflow-hidden scanline">
-      {/* HUD KEMBALI Button */}
-      <Link href="/" className="absolute top-6 left-6 md:top-10 md:left-10 z-50 font-pixel text-xs bg-red-900 text-white px-4 py-2 border-4 border-red-950 hover:bg-red-800 transition-colors shadow-[4px_4px_0_rgba(0,0,0,0.5)]">
-        {"< KEMBALI"}
-      </Link>
-
       {/* Background Ornaments */}
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
       <div className="absolute -top-40 -left-40 h-[300px] w-[300px] rounded-full bg-blue-500/10 blur-[100px] animate-pulse-glow"></div>
@@ -45,6 +40,11 @@ export default function LoginPage() {
       
       <div className="pixel-card-wood relative z-10 w-full max-w-md p-2 animate-float">
         <div className="pixel-card-wood-light relative p-8 text-center text-white">
+          <Link href="/" className="absolute -top-4 -left-4 font-pixel text-xs bg-red-900 text-white px-3 py-2 border-2 border-red-950 hover:bg-red-800 transition-colors group flex items-center gap-1">
+            <span className="animate-arrow text-red-300 group-hover:text-white transition-colors">{"<"}</span>
+            <span className="animate-arrow text-red-300 group-hover:text-white transition-colors" style={{animationDelay: "150ms"}}>{"<"}</span>
+            <span className="animate-arrow text-red-300 group-hover:text-white transition-colors" style={{animationDelay: "300ms"}}>{"<"}</span>
+          </Link>
           <div className="absolute -top-6 left-1/2 -translate-x-1/2 border-4 border-[#1a0f07] bg-[#5c3a21] px-6 py-2 whitespace-nowrap">
             <h1 className="font-pixel text-xl text-shadow-pixel-sm hover-glitch cursor-default">LOGIN</h1>
           </div>

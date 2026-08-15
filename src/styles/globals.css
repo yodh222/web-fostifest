@@ -110,6 +110,17 @@
   animation: marquee 20s linear infinite;
 }
 
+/* Arrow Slide Animation */
+@keyframes arrow-slide-left {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-4px); }
+}
+
+.animate-arrow {
+  animation: arrow-slide-left 1s ease-in-out infinite;
+  display: inline-block;
+}
+
 /* Animasi Inovatif FOSTI */
 @keyframes float {
   0%, 100% { transform: translateY(0); }
