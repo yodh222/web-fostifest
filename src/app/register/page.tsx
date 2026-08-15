@@ -35,20 +35,19 @@ export default function RegisterPage() {
 
   return (
     <main className="min-h-screen bg-[#111111] text-white flex items-center justify-center p-6 relative overflow-hidden scanline">
+      {/* HUD KEMBALI Button */}
+      <Link href="/" className="absolute top-6 left-6 md:top-10 md:left-10 z-50 font-pixel text-xs bg-[#222] text-white px-4 py-2 border-4 border-[#111] hover:bg-[#333] transition-colors shadow-[4px_4px_0_rgba(0,0,0,0.5)]">
+        {"< KEMBALI"}
+      </Link>
+
       {/* Background Ornaments */}
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
       <div className="absolute -top-40 -left-40 h-[300px] w-[300px] rounded-full bg-blue-500/10 blur-[100px] animate-pulse-glow"></div>
       <div className="absolute -bottom-40 -right-40 h-[300px] w-[300px] rounded-full bg-yellow-500/10 blur-[100px] animate-pulse-glow"></div>
       
-      <div className="relative z-10 w-full max-w-md flex flex-col gap-6 animate-float">
-        <div className="self-start pl-2">
-          <Link href="/" className="font-pixel text-xs bg-[#222] text-white px-4 py-2 border-4 border-[#111] hover:bg-[#333] transition-colors shadow-[4px_4px_0_rgba(0,0,0,0.5)]">
-            {"< KEMBALI"}
-          </Link>
-        </div>
-        <div className="pixel-card-stone p-2">
-          <div className="pixel-card-stone relative p-8 text-center text-white border-none shadow-none">
-            <div className="absolute -top-6 left-1/2 -translate-x-1/2 border-4 border-[#1a1a1a] bg-[#4a4a4a] px-6 py-2">
+      <div className="pixel-card-stone relative z-10 w-full max-w-md p-2 animate-float">
+        <div className="pixel-card-stone relative p-8 text-center text-white border-none shadow-none">
+          <div className="absolute -top-6 left-1/2 -translate-x-1/2 border-4 border-[#1a1a1a] bg-[#4a4a4a] px-6 py-2 whitespace-nowrap">
             <h1 className="font-pixel text-xl text-shadow-pixel-sm hover-glitch cursor-default">REGISTRASI</h1>
           </div>
 
@@ -111,7 +110,6 @@ export default function RegisterPage() {
             </Link>
           </p>
         </div>
-      </div>
       </div>
     </main>
   );
