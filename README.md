@@ -2,26 +2,26 @@
 
 ![FOSTIFEST 26 Logo/Header Placeholder]
 
-Platform pendaftaran dan dashboard resmi FOSTIFEST 26. Dibuat menggunakan T3 Stack modern dengan nuansa pixel-art/Minecraft. 
-Platform ini menangani alur pendaftaran dari pembentukan tim, pembayaran, hingga pengunggahan persyaratan lomba dan _workshop_.
+The official registration platform and dashboard for FOSTIFEST 26. Built using the modern T3 Stack with a pixel-art/Minecraft aesthetic.
+This platform handles the registration flow, from team formation and payment to uploading competition and workshop requirements.
 
-## 🚀 Fitur Utama
-* **Autentikasi Aman:** Dikelola menggunakan [Better Auth](https://better-auth.com) dengan _schema_ terpisah untuk keamanan tinggi.
-* **Manajemen Tim:** Peserta dapat membentuk tim baru atau bergabung ke dalam tim menggunakan kode _invite_ unik (hanya 1 tim per orang).
-* **Unggah Persyaratan:** Terintegrasi langsung dengan **Supabase Storage** untuk unggah KMS/KTM, Twibbon, *Follow* IG, dan Bukti Pembayaran.
-* **Dashboard Panitia (Admin):** Panel tersembunyi bagi panitia untuk memverifikasi seluruh bukti pendaftaran.
-* **Pixel-art UI:** Antarmuka estetik yang bernuansa *retro gaming*.
+## 🚀 Key Features
+* **Secure Authentication:** Managed using [Better Auth](https://better-auth.com) with separate schemas for high security.
+* **Team Management:** Participants can create a new team or join an existing team using a unique invite code (only 1 team per person).
+* **Requirement Uploads:** Integrated directly with **Supabase Storage** for uploading KMS/KTM (Student ID), Twibbon, IG Follow proofs, and Payment Receipts.
+* **Admin Dashboard:** A hidden panel for the committee to verify all registration proofs.
+* **Pixel-art UI:** An aesthetic interface with a retro gaming vibe.
 
-## 🛠️ Persiapan Lingkungan (Setup)
+## 🛠️ Environment Setup
 
-Salin fail `.env.example` menjadi `.env` lalu isi *environment variables* berikut:
+Copy the `.env.example` file to `.env` and fill in the following environment variables:
 
 ```env
-# URL Database (PostgreSQL)
+# Database URL (PostgreSQL)
 DATABASE_URL="postgresql://postgres:password@localhost:5432/fostifest"
 
 # Better Auth
-BETTER_AUTH_SECRET="secret-key-yang-susah-ditebak"
+BETTER_AUTH_SECRET="hard-to-guess-secret-key"
 BETTER_AUTH_URL="http://localhost:3000"
 
 # Supabase Storage
@@ -29,39 +29,37 @@ NEXT_PUBLIC_SUPABASE_URL="https://[YOUR_SUPABASE_ID].supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="[YOUR_ANON_KEY]"
 ```
 
-> **Peringatan Supabase:** Pastikan Anda memiliki *bucket* bernama **`fostifest-files`** di Supabase dengan visibilitas _public_.
+> **Supabase Warning:** Ensure you have a bucket named **`fostifest-files`** in Supabase with _public_ visibility.
 
-## 📚 Migrasi Database & Seeding Dummy Account
+## 📚 Database Migration & Dummy Account Seeding
 
-1. Jalankan migrasi skema database dengan Drizzle:
+1. Run the database schema migration with Drizzle:
    ```bash
    pnpm db:push
    ```
-2. Jalankan aplikasi:
+2. Start the application:
    ```bash
    pnpm dev
    ```
-3. **MIGRASI AWAL / SEEDING AKUN DUMMY:**
-   Buka *endpoint* rahasia ini di browser Anda sekali saja untuk menginjeksi akun *dummy* ke database:
+3. **INITIAL MIGRATION / DUMMY ACCOUNT SEEDING:**
+   Open this secret endpoint in your browser just once to inject dummy accounts into the database:
    [http://localhost:3000/api/seed](http://localhost:3000/api/seed)
 
-   Setelah sukses, Anda dapat login (_Sign In_) menggunakan dua akun *dummy* aneh berikut untuk mengecek semua halaman secara penuh:
+   Upon success, you can Sign In using these two weird dummy accounts to fully explore all pages:
 
-   **👤 Akun Panitia (Admin)**
+   **👤 Committee Account (Admin)**
    * Email: `panitia.fosti_secret_x99@fostiums.org`
    * Password: `FostiAdmin_X99_#2026`
-   * _(Fungsi: Memiliki akses ke kontrol verifikasi pembayaran & verifikasi syarat kelengkapan anggota tim)_
+   * _(Role: Has access to the payment verification control & team requirement verification)_
 
-   **👥 Akun Tester/Peserta**
+   **👥 Tester/Participant Account**
    * Email: `dummy_team_xyz88@tester.com`
    * Password: `TestAccount_88_!`
-   * _(Fungsi: Bisa mencoba simulasi pendaftaran tim, join menggunakan kode, bayar lomba, & ikut workshop)_
+   * _(Role: Can try the team registration simulation, join using a code, pay for the competition, & join the workshop)_
 
-## 💻 Panduan Pengembangan Lanjutan
+## 💻 Advanced Development Guide
 
-Bila Anda ingin memperbarui skema, silakan sunting `/src/server/db/schema.ts` dan jalankan ulang `pnpm db:push`. Semua integrasi *server logic* Fostifest berada di `/src/server/actions.ts`.
+If you want to update the schema, please edit `/src/server/db/schema.ts` and re-run `pnpm db:push`. All FOSTIFEST server logic integrations are located in `/src/server/actions.ts`.
 
 ---
 _© 2026 FOSTIFEST by FOSTI UMS_
-
-## What's next? How do I make an app with this?
