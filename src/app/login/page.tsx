@@ -35,7 +35,7 @@ export default function LoginPage() {
     <main className="min-h-screen bg-[#111111] text-white flex items-center justify-center p-6 relative overflow-hidden scanline">
       {/* Background Ornaments */}
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20 animate-slide-bg"></div>
-      <div className="absolute left-1/2 top-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-green-500/20 blur-[120px] animate-pulse-glow"></div>
+      <div className="absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-green-500/40 blur-[100px] animate-pulse"></div>
       
       <div className="pixel-card-wood relative z-10 w-full max-w-md p-2 animate-float">
         <div className="pixel-card-wood-light relative p-8 text-center text-white">
